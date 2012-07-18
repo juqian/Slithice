@@ -1,4 +1,4 @@
 repo
 ====
 
-the repository of the plugin Slithice
+the repository of research projects
