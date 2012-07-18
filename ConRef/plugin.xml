@@ -1,0 +1,83 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?eclipse version="3.4"?>
+<plugin>
+<!--
+   <extension
+         point="org.eclipse.ui.editors.markerAnnotationSpecification">    
+      <specification
+            verticalRulerPreferenceKey="myoccurrenceIndicationInVerticalRuler"
+            annotationType="highlighter.highlightAnnotation"
+            textPreferenceKey="myoccurrenceIndication"
+            colorPreferenceKey="myoccurrenceIndicationColor"
+            highlightPreferenceKey="myoccurrenceHighlighting"
+            isGoToPreviousNavigationTarget="false"
+            includeOnPreferencePage="true"
+            textPreferenceValue="false"
+            isGoToNextNavigationTarget="false"
+            textStylePreferenceValue="IBEAM"
+            overviewRulerPreferenceKey="myoccurrenceIndicationInOverviewRuler"
+            showInNextPrevDropdownToolbarAction="true"
+            presentationLayer="4"
+            highlightPreferenceValue="true"
+            label="ExampleAnnotation"
+            colorPreferenceValue="108,157,232"
+            verticalRulerPreferenceValue="false"
+            isGoToPreviousNavigationTargetKey="ismyOccurrenceGoToPreviousNavigationTarget"
+            showInNextPrevDropdownToolbarActionKey="showmyOccurrenceInNextPrevDropdownToolbarAction"
+            overviewRulerPreferenceValue="true"
+            textStylePreferenceKey="highlighter.style"
+            isGoToNextNavigationTargetKey="ismyOccurrenceGoToNextNavigationTarget">
+      </specification>
+   </extension>   
+   -->  
+ <extension
+         point="org.eclipse.ui.views">
+      <category
+            name="Sample Category"
+            id="test">
+      </category>
+      <view
+            category="test"
+            class="com.conref.refactoring.splitlock.views.MethodsView"
+            icon="icons/lock.png"
+            id="test.views.SampleView"
+            name="Split Candidates">
+      </view>
+   </extension>
+   <extension
+         point="org.eclipse.ui.editorActions">
+         <editorContribution
+            targetID="org.eclipse.jdt.ui.CompilationUnitEditor"
+            id="splitlock.editorContribution">
+     
+         <menu
+               label="synchronization refactor"
+               id="sampleMenu">
+            <separator
+                  name="sampleGroup">
+            </separator>
+         </menu>
+         <!--
+         <action
+               toolbarPath="sampleGroup"
+               label="Reset"
+               tooltip="Reset highlights"
+               icon="icons/reset.gif"
+               class="splitlock.highlighter.RemoveHighlightAction"
+               style="push"
+               id="highlighter.RemoveHighlight"/> 
+               -->
+         <action
+               class="com.conref.refactoring.splitlock.actions.ShowTableViewAction"
+               icon="icons/lock.png"
+               id="splitlock.actions.showViewAction"
+               label="showView"
+               menubarPath="sampleMenu/sampleGroup"
+               style="push"
+               toolbarPath="sampleGroup">
+         </action>
+     
+      </editorContribution>
+   </extension>
+
+</plugin>
