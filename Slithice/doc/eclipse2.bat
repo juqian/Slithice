@@ -1,0 +1,1 @@
+eclipse.exe -vm "C:\Program Files\Java\jre1.5.0_09\bin\javaw.exe" -vmargs -Xmx900m

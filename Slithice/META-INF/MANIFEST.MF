@@ -1,0 +1,24 @@
+Manifest-Version: 1.0
+Bundle-ManifestVersion: 2
+Bundle-Name: Slithice Plug-in
+Bundle-SymbolicName: com.jqian.slithice;singleton:=true
+Bundle-Version: 0.02
+Bundle-Activator: jqian.slicer.plugin.Activator
+Require-Bundle: org.eclipse.ui,
+ org.eclipse.core.runtime,
+ org.eclipse.core.resources,
+ org.eclipse.jdt.core,
+ org.eclipse.jdt.ui,
+ org.eclipse.ui.ide,
+ org.eclipse.ui.editors,
+ org.eclipse.ui.workbench.texteditor,
+ org.eclipse.jface.text,
+ org.eclipse.core.expressions,
+ org.eclipse.ui.console
+Eclipse-LazyStart: true
+Bundle-ClassPath: .,
+ bin/,
+ lib/grappa1_2.jar,
+ lib/jgraphx.jar,
+ lib/soot-2.4.0.jar
+Bundle-Vendor: Ju Qian

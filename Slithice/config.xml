@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Config>
+
+<show_sdg>false</show_sdg>
+<verbose>true</verbose>
+<ignore_jre_clinit>true</ignore_jre_clinit>
+<show_slices_in_sdg>true</show_slices_in_sdg>
+<simplify_cg>true</simplify_cg>
+<dotpath></dotpath>
+<use_dependence_navigator>true</use_dependence_navigator>
+
+
+</Config>
+
+
+ 
+
+ 

@@ -1,0 +1,265 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?eclipse version="3.2"?>
+<plugin>
+   
+   <extension
+         point="org.eclipse.ui.editors.markerAnnotationSpecification">    
+      <specification
+            verticalRulerPreferenceKey="myoccurrenceIndicationInVerticalRuler"
+            annotationType="highlighter.highlightAnnotation"
+            textPreferenceKey="myoccurrenceIndication"
+            colorPreferenceKey="myoccurrenceIndicationColor"
+            highlightPreferenceKey="myoccurrenceHighlighting"
+            isGoToPreviousNavigationTarget="false"
+            includeOnPreferencePage="true"
+            textPreferenceValue="false"
+            isGoToNextNavigationTarget="false"
+            textStylePreferenceValue="IBEAM"
+            overviewRulerPreferenceKey="myoccurrenceIndicationInOverviewRuler"
+            showInNextPrevDropdownToolbarAction="true"
+            presentationLayer="4"
+            highlightPreferenceValue="true"
+            label="ExampleAnnotation"
+            colorPreferenceValue="255,255,128"
+            verticalRulerPreferenceValue="false"
+            isGoToPreviousNavigationTargetKey="ismyOccurrenceGoToPreviousNavigationTarget"
+            showInNextPrevDropdownToolbarActionKey="showmyOccurrenceInNextPrevDropdownToolbarAction"
+            overviewRulerPreferenceValue="true"
+            textStylePreferenceKey="highlighter.style"
+            isGoToNextNavigationTargetKey="ismyOccurrenceGoToNextNavigationTarget">
+      </specification>
+   </extension>          
+   
+      
+   <extension point="org.eclipse.ui.views">
+      <!-- Slice global view -->
+      <category
+            id="jqian.slicer.Views"
+            name="Slice viewers"/>
+      <view
+            category="jqian.slicer.Views"
+            class="jqian.slicer.plugin.view.PluginSliceViewer"
+            icon="rc/sample.gif"
+            id="jqian.slicer.GlobalSliceView"
+            name="Global Slice View"/>
+        
+      <!-- Dependence graph view -->    
+      <view
+            name="Graph Viewer"
+            icon="rc/sample.gif"
+            category="jqian.slicer.Views"
+            class="jqian.slicer.plugin.view.ImageView"
+            id="jqian.slicer.ImageView">
+      </view>
+   </extension>
+   
+   <extension point="org.eclipse.ui.popupMenus">
+      <!-- buttons for starting global slice view -->
+      <objectContribution
+            id="jqian.slicer.contribution1"
+            adaptable="true"
+            nameFilter="*"
+            objectClass="org.eclipse.core.resources.IProject">
+         <menu id="jqian.slicer.projectMenu"
+              label="Program Slicing"              
+              path="additions">     
+              <separator name="basicGroup"/>                     
+         </menu>
+        
+        <action
+               class="jqian.slicer.plugin.actions.ProjectMenuActionDelegate"
+               enablesFor="+"
+               id="jqian.slicer.resetAction"                          
+               label="Reset All Data"
+               menubarPath="jqian.slicer.projectMenu/basicGroup"/>
+               
+        <action
+               class="jqian.slicer.plugin.actions.ProjectMenuActionDelegate"
+               enablesFor="+"
+               id="jqian.slicer.showGbViewAction"                          
+               label="Show Slice Distribution"
+               menubarPath="jqian.slicer.projectMenu/basicGroup"/>
+               
+        <action
+               class="jqian.slicer.plugin.actions.ProjectMenuActionDelegate"
+               enablesFor="+"
+               id="jqian.slicer.setProjectEntryAction"                          
+               label="Set Project Entry"
+               menubarPath="jqian.slicer.projectMenu/basicGroup"/>
+               
+         <action
+               class="jqian.slicer.plugin.actions.ProjectMenuActionDelegate"
+               enablesFor="+"
+               id="jqian.slicer.configSlicer"                          
+               label="Configurate Slicer"
+               menubarPath="jqian.slicer.projectMenu/basicGroup"/>          
+          
+      </objectContribution>
+      
+      <!-- Menu item add into the Java text editor  -->
+      <viewerContribution targetID="#CompilationUnitEditorContext" 
+                          id="jqian.slicer.selectCriterion"> 
+        <menu id="jqian.slicer.textEditorMenu"
+              label="Program Slicing"
+              path="additions">     
+              <separator name="basicGroup"/>                     
+        </menu>        
+              
+        <action label="Show Call Graph"
+              class="jqian.slicer.plugin.actions.JavaEditorActionDelegate" 
+              id="jqian.slicer.actions.ShowCG"
+              menubarPath="jqian.slicer.textEditorMenu/basicGroup"/>
+           
+        <action label="Show Jimple Control Flow Graph"
+              class="jqian.slicer.plugin.actions.JavaEditorActionDelegate" 
+              id="jqian.slicer.actions.showCFG"
+              menubarPath="jqian.slicer.textEditorMenu/basicGroup"/>
+                 
+        <action label="Dot System Dependence Graph Again (test only)"
+              class="jqian.slicer.plugin.actions.JavaEditorActionDelegate" 
+              id="jqian.slicer.actions.DotSDG"
+              menubarPath="jqian.slicer.textEditorMenu/basicGroup"/>
+              
+        <action label="Show System Dependence Graph"
+              class="jqian.slicer.plugin.actions.JavaEditorActionDelegate" 
+              id="jqian.slicer.actions.ShowSDG"
+              menubarPath="jqian.slicer.textEditorMenu/basicGroup"/>
+              
+        <action label="Show Method Dependence Graph (in Jimple)"
+              class="jqian.slicer.plugin.actions.JavaEditorActionDelegate" 
+              id="jqian.slicer.actions.ShowJimplePDG"
+              menubarPath="jqian.slicer.textEditorMenu/basicGroup"/>
+              
+        <action label="Show Method Dependence Graph (in source code)"
+              class="jqian.slicer.plugin.actions.JavaEditorActionDelegate" 
+              id="jqian.slicer.actions.ShowJavaPDG"
+              menubarPath="jqian.slicer.textEditorMenu/basicGroup"/>
+              
+        <action label="Remove Slice Highlights"
+              class="jqian.slicer.plugin.actions.RemoveHighlightAction" 
+              id="jqian.slicer.actions.removeSliceHighlights"
+              menubarPath="jqian.slicer.textEditorMenu/basicGroup"/>
+              
+        <action label="Highlighting Slices"
+              class="jqian.slicer.plugin.actions.AddHighlightAction" 
+              id="jqian.slicer.actions.HighlightSlices"
+              menubarPath="jqian.slicer.textEditorMenu/basicGroup"/> 
+        
+        <action label="New Slicing Criterion"
+              class="jqian.slicer.plugin.actions.ChooseCriterionAction" 
+              id="jqian.slicer.actions.newCriterion"
+              menubarPath="jqian.slicer.textEditorMenu/basicGroup"/>
+              
+       </viewerContribution>
+       
+   </extension>
+   
+   
+   <extension point="org.eclipse.ui.editorActions">
+      <editorContribution
+            targetID="org.eclipse.jdt.ui.CompilationUnitEditor"
+            id="jqian.slicer.editorContribution">         
+         <action
+               toolbarPath="Normal/additions"
+               label="Clear Slice View"
+               tooltip="Remove slice highlights"
+               icon="rc/reset.ico"
+               class="jqian.slicer.plugin.actions.RemoveHighlightAction"
+               style="push"
+               id="jqian.slicer.RemoveHighlight"/> 
+         <action
+               class="jqian.slicer.plugin.actions.AddHighlightAction"
+               icon="rc/slice.ico"
+               id="jqian.slicer.AddHighlight"
+               label="Show Slice"
+               toolbarPath="Normal/additions"
+               tooltip="Highlight slices in the text editor">
+         </action>
+      </editorContribution>
+   </extension>
+   
+   
+   <!-- Toolbar buttons for Dependence graph view -->
+   <extension point="org.eclipse.ui.viewActions">
+      <viewContribution
+            targetID="jqian.slicer.ImageView"
+            id="jqian.slicer.imageviewer.views.ImageView.pushbutton">
+         <!-- Rotation button -->
+         <action
+               label="Rotate"
+               icon="rc/Rotate16.gif"
+               tooltip="Rotate"
+               class="jqian.slicer.plugin.actions.PushActionDelegate"
+               toolbarPath="push_group"
+               enablesFor="*"
+               id="toolbar.rotate">
+         </action>
+         <!-- Fit button -->
+         <action
+               label="FitWindow"
+               icon="rc/Fit16.gif"
+               tooltip="Fit window"
+               class="jqian.slicer.plugin.actions.PushActionDelegate"
+               toolbarPath="push_group"
+               enablesFor="*"
+               id="toolbar.fit">
+         </action>
+         <!-- Original button -->
+         <action
+               label="OriginalSize"
+               icon="rc/Original16.gif"
+               tooltip="Original size"
+               class="jqian.slicer.plugin.actions.PushActionDelegate"
+               toolbarPath="push_group"
+               enablesFor="*"
+               id="toolbar.original">
+         </action>
+         <!-- ZoomIn button -->
+         <action
+               label="ZoomIn"
+               icon="rc/ZoomIn16.gif"
+               tooltip="Zoom in"
+               class="jqian.slicer.plugin.actions.PushActionDelegate"
+               toolbarPath="push_group"
+               enablesFor="*"
+               id="toolbar.zoomin">
+         </action>
+         <!-- ZoomOut button -->
+         <action
+               label="ZoomOut"
+               icon="rc/ZoomOut16.gif"
+               tooltip="Zoom out"
+               class="jqian.slicer.plugin.actions.PushActionDelegate"
+               toolbarPath="push_group"
+               enablesFor="*"
+               id="toolbar.zoomout">
+         </action>
+      </viewContribution>
+   </extension>
+   
+
+    <!-- Register a command, it works with the keybinding -->
+	<extension point="org.eclipse.ui.commands">
+         <category
+            description="Slicer command category."
+            id="z.ex.view.keybindings.category"
+            name="slicer_cmds">
+         </category>
+         <command
+            categoryId="z.ex.view.keybindings.category"
+            description="show dependence navigator"
+            id="jqian.slicer.ShowNavigator"           
+            name="show navigator">
+         </command>
+   </extension>
+   
+     <extension point="org.eclipse.ui.bindings">
+		<key
+            commandId="jqian.slicer.ShowNavigator"            
+            schemeId="org.eclipse.ui.defaultAcceleratorConfiguration"
+            sequence="CTRL+X">
+   		</key>
+	</extension> 
+	
+
+</plugin>

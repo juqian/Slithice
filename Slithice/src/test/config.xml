@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Config>
+
+<verbose>true</verbose>
+<debug>true</debug>
+
+<!-- paths for .class files -->
+<classpath>./bin</classpath>
+
+<!-- entry of the application -->
+<entry_class>test.cases.SideEffect</entry_class>
+
+<jdk_path>C:\Program Files\Java\jdk1.5.0_09</jdk_path>
+
+<!-- paths for .java files -->
+<srcpath>C:\Program Files\Java\jdk1.5.0_09\src.zip</srcpath>
+
+<dot>./lib/dot/dot</dot>
+
+</Config>

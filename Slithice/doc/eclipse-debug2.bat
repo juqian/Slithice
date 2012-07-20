@@ -1,0 +1,1 @@
+eclipse.exe -nosplash -debug debug.options -vm "C:\Program Files\Java\jre1.5.0_09\bin\javaw.exe" -vmargs -Xmx800m

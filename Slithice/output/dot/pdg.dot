@@ -1,0 +1,195 @@
+digraph "Dependence Graph" {
+  graph [
+    fontsize = 8
+  ];
+
+  "48:35:r=$r0" [
+    label = "35:r=$r0",
+    fontsize = 8
+  ];
+  "#38 EN SDG8.add" [
+    label = "#38 EN SDG8.add",
+    fontsize = 8
+  ];
+  "42:37:return r" [
+    label = "37:return r",
+    fontsize = 8
+  ];
+  "#52 FO java.lang.Object" [
+    label = "#52 FO java.lang.Object",
+    fillcolor = gray,
+    style = filled,
+    fontsize = 8
+  ];
+  "39:35:$r0.<init>()" [
+    label = "35:$r0.<init>()",
+    fontsize = 8
+  ];
+  "43:36:$i0=$i0 + $i1" [
+    label = "36:$i0=$i0 + $i1",
+    fontsize = 8
+  ];
+  "#49 FO RET" [
+    label = "#49 FO RET",
+    fillcolor = gray,
+    style = filled,
+    fontsize = 8
+  ];
+  "#50 FI a" [
+    label = "#50 FI a",
+    fillcolor = gray,
+    style = filled,
+    fontsize = 8
+  ];
+  "47:36:r.i=$i0" [
+    label = "36:r.i=$i0",
+    fontsize = 8
+  ];
+  "#53 FI java.lang.Object" [
+    label = "#53 FI java.lang.Object",
+    fillcolor = gray,
+    style = filled,
+    fontsize = 8
+  ];
+  "CALL #40 SDG8$Int.<init>()" [
+    label = "CALL #40 SDG8$Int.<init>()",
+    fontsize = 8
+  ];
+  "#51 FI b" [
+    label = "#51 FI b",
+    fillcolor = gray,
+    style = filled,
+    fontsize = 8
+  ];
+  "46:36:$i1=b.i" [
+    label = "36:$i1=b.i",
+    fontsize = 8
+  ];
+  "45:35:$r0=new test.cases.SDG8$Int" [
+    label = "35:$r0=new test.cases.SDG8$Int",
+    fontsize = 8
+  ];
+  "44:36:$i0=a.i" [
+    label = "36:$i0=a.i",
+    fontsize = 8
+  ];
+  "#41 AI this=$r0" [
+    label = "#41 AI this=$r0",
+    fillcolor = gray,
+    style = filled,
+    fontsize = 8
+  ];
+  "45:35:$r0=new test.cases.SDG8$Int" -> "46:36:$i1=b.i" [
+    label = "*.*",
+    fontsize = 9
+  ];
+  "45:35:$r0=new test.cases.SDG8$Int" -> "44:36:$i0=a.i" [
+    label = "*.*",
+    fontsize = 9
+  ];
+  "45:35:$r0=new test.cases.SDG8$Int" -> "48:35:r=$r0" [
+    label = "$r0",
+    fontsize = 9
+  ];
+  "44:36:$i0=a.i" -> "43:36:$i0=$i0 + $i1" [
+    label = "$i0",
+    fontsize = 9
+  ];
+  "#38 EN SDG8.add" -> "#50 FI a" [
+    style = bold
+  ];
+  "45:35:$r0=new test.cases.SDG8$Int" -> "#52 FO java.lang.Object" [
+    label = "*.*",
+    fontsize = 9
+  ];
+  "#38 EN SDG8.add" -> "46:36:$i1=b.i" [
+    style = bold
+  ];
+  "#38 EN SDG8.add" -> "48:35:r=$r0" [
+    style = bold
+  ];
+  "45:35:$r0=new test.cases.SDG8$Int" -> "#41 AI this=$r0" [
+    label = "$r0",
+    fontsize = 9
+  ];
+  "#38 EN SDG8.add" -> "45:35:$r0=new test.cases.SDG8$Int" [
+    style = bold
+  ];
+  "#53 FI java.lang.Object" -> "#52 FO java.lang.Object" [
+    label = "*.*",
+    fontsize = 9
+  ];
+  "#53 FI java.lang.Object" -> "44:36:$i0=a.i" [
+    label = "*.*",
+    fontsize = 9
+  ];
+  "#50 FI a" -> "44:36:$i0=a.i" [
+    label = a,
+    fontsize = 9
+  ];
+  "#38 EN SDG8.add" -> "#53 FI java.lang.Object" [
+    style = bold
+  ];
+  "#51 FI b" -> "46:36:$i1=b.i" [
+    label = b,
+    fontsize = 9
+  ];
+  "CALL #40 SDG8$Int.<init>()" -> "#41 AI this=$r0" [
+    style = bold
+  ];
+  "#38 EN SDG8.add" -> "#52 FO java.lang.Object" [
+    style = bold
+  ];
+  "#53 FI java.lang.Object" -> "46:36:$i1=b.i" [
+    label = "*.*",
+    fontsize = 9
+  ];
+  "42:37:return r" -> "#49 FO RET" [
+    label = "add.ret",
+    fontsize = 9
+  ];
+  "#38 EN SDG8.add" -> "39:35:$r0.<init>()" [
+    style = bold
+  ];
+  "43:36:$i0=$i0 + $i1" -> "47:36:r.i=$i0" [
+    label = "$i0",
+    fontsize = 9
+  ];
+  "#38 EN SDG8.add" -> "47:36:r.i=$i0" [
+    style = bold
+  ];
+  "46:36:$i1=b.i" -> "43:36:$i0=$i0 + $i1" [
+    label = "$i1",
+    fontsize = 9
+  ];
+  "47:36:r.i=$i0" -> "#52 FO java.lang.Object" [
+    label = "*.*",
+    fontsize = 9
+  ];
+  "#38 EN SDG8.add" -> "42:37:return r" [
+    style = bold
+  ];
+  "48:35:r=$r0" -> "47:36:r.i=$i0" [
+    label = r,
+    fontsize = 9
+  ];
+  "#38 EN SDG8.add" -> "#51 FI b" [
+    style = bold
+  ];
+  "#38 EN SDG8.add" -> "44:36:$i0=a.i" [
+    style = bold
+  ];
+  "48:35:r=$r0" -> "42:37:return r" [
+    label = r,
+    fontsize = 9
+  ];
+  "#38 EN SDG8.add" -> "#49 FO RET" [
+    style = bold
+  ];
+  "#38 EN SDG8.add" -> "43:36:$i0=$i0 + $i1" [
+    style = bold
+  ];
+  "39:35:$r0.<init>()" -> "CALL #40 SDG8$Int.<init>()" [
+    style = bold
+  ];
+}

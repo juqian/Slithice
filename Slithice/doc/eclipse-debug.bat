@@ -1,0 +1,1 @@
+eclipse.exe -nosplash -debug debug.options -vmargs -Xmx800m

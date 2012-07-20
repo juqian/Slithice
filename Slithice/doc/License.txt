@@ -1,0 +1,4 @@
+Thanks to Sable Soot from McGill University (http://www.sable.mcgill.ca/soot/), 
+and Graphviz dot from AT&T(http://www.graphviz.org/License.php).
+
+The Slithice Slicer is free for use, but nothing is guaranteed.

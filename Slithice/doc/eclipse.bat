@@ -1,0 +1,1 @@
+eclipse.exe -vmargs -Xmx900m
