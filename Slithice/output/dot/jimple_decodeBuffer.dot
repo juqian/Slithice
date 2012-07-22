@@ -1,0 +1,155 @@
+digraph jimple_decodeBuffer {
+  graph [
+    fontsize = 9
+  ];
+
+  "n19: 145:l3=l3 + $i0" [
+    fontsize = 9
+  ];
+  "n17: 145:if $i1 >= l6 goto 149" [
+    fontsize = 9
+  ];
+  "n29: 145:l3=0" [
+    fontsize = 9
+  ];
+  "n15: 156:l0.decodeLineSuffix(l5,l2)" [
+    fontsize = 9
+  ];
+  "n36: 150:l0.decodeAtom(l5,l2,$i2)" [
+    fontsize = 9
+  ];
+  "n31: 149:if $i1 != l6 goto 153" [
+    fontsize = 9
+  ];
+  "n3: 151:$i0=l0.bytesPerAtom()" [
+    fontsize = 9
+  ];
+  "n26: 0:entry" [
+    fontsize = 9
+  ];
+  "n1: 139:l0.decodeBufferPrefix(l5,l2)" [
+    fontsize = 9
+  ];
+  "n16: 138:$r0.<init>(l1)" [
+    fontsize = 9
+  ];
+  "n24: 154:$i0=l6 - l3" [
+    fontsize = 9
+  ];
+  "n9: 144:l6=l0.decodeLinePrefix(l5,l2)" [
+    fontsize = 9
+  ];
+  "n4: 153:$i2=l6 - l3" [
+    fontsize = 9
+  ];
+  "n37: 153:l0.decodeAtom(l5,l2,$i2)" [
+    fontsize = 9
+  ];
+  "n5: 147:l4=l4 + $i0" [
+    fontsize = 9
+  ];
+  "n20: 145:$i1=l3 + $i0" [
+    fontsize = 9
+  ];
+  "n22: 146:$i2=l0.bytesPerAtom()" [
+    fontsize = 9
+  ];
+  "n34: 159:goto 160" [
+    fontsize = 9
+  ];
+  "n7: 160:goto 144" [
+    fontsize = 9
+  ];
+  "n12: 138:$r0=new java.io.PushbackInputStream" [
+    fontsize = 9
+  ];
+  "n18: 147:$i0=l0.bytesPerAtom()" [
+    fontsize = 9
+  ];
+  "n11: 152:goto 156" [
+    fontsize = 9
+  ];
+  "n35: 151:l4=l4 + $i0" [
+    fontsize = 9
+  ];
+  "n25: 0:exit" [
+    fontsize = 9
+  ];
+  "n28: 146:l0.decodeAtom(l5,l2,$i2)" [
+    fontsize = 9
+  ];
+  "n13: 154:l4=l4 + $i0" [
+    fontsize = 9
+  ];
+  "n2: 149:$i0=l0.bytesPerAtom()" [
+    fontsize = 9
+  ];
+  "n23: 145:$i0=l0.bytesPerAtom()" [
+    fontsize = 9
+  ];
+  "n14: 136:l1=@parameter0: java.io.InputStream" [
+    fontsize = 9
+  ];
+  "n27: 145:goto 145" [
+    fontsize = 9
+  ];
+  "n10: 138:l5=$r0" [
+    fontsize = 9
+  ];
+  "n8: 149:$i1=l3 + $i0" [
+    fontsize = 9
+  ];
+  "n30: 150:$i2=l0.bytesPerAtom()" [
+    fontsize = 9
+  ];
+  "n32: 136:l0=@this: sun.misc.CharacterDecoder" [
+    fontsize = 9
+  ];
+  "n6: 145:$i0=l0.bytesPerAtom()" [
+    fontsize = 9
+  ];
+  "n33: 136:l2=@parameter1: java.io.OutputStream" [
+    fontsize = 9
+  ];
+  "n21: 136:l4=0" [
+    fontsize = 9
+  ];
+  "n11: 152:goto 156" -> "n35: 151:l4=l4 + $i0"
+  "n35: 151:l4=l4 + $i0" -> "n3: 151:$i0=l0.bytesPerAtom()"
+  "n30: 150:$i2=l0.bytesPerAtom()" -> "n31: 149:if $i1 != l6 goto 153"
+  "n10: 138:l5=$r0" -> "n16: 138:$r0.<init>(l1)"
+  "n15: 156:l0.decodeLineSuffix(l5,l2)" -> "n13: 154:l4=l4 + $i0"
+  "n34: 159:goto 160" -> "n15: 156:l0.decodeLineSuffix(l5,l2)"
+  "n1: 139:l0.decodeBufferPrefix(l5,l2)" -> "n10: 138:l5=$r0"
+  "n2: 149:$i0=l0.bytesPerAtom()" -> "n17: 145:if $i1 >= l6 goto 149"
+  "n17: 145:if $i1 >= l6 goto 149" -> "n20: 145:$i1=l3 + $i0"
+  "n5: 147:l4=l4 + $i0" -> "n18: 147:$i0=l0.bytesPerAtom()"
+  "n20: 145:$i1=l3 + $i0" -> "n6: 145:$i0=l0.bytesPerAtom()"
+  "n19: 145:l3=l3 + $i0" -> "n23: 145:$i0=l0.bytesPerAtom()"
+  "n13: 154:l4=l4 + $i0" -> "n24: 154:$i0=l6 - l3"
+  "n4: 153:$i2=l6 - l3" -> "n31: 149:if $i1 != l6 goto 153"
+  "n28: 146:l0.decodeAtom(l5,l2,$i2)" -> "n22: 146:$i2=l0.bytesPerAtom()"
+  "n9: 144:l6=l0.decodeLinePrefix(l5,l2)" -> "n7: 160:goto 144"
+  "n23: 145:$i0=l0.bytesPerAtom()" -> "n5: 147:l4=l4 + $i0"
+  "n33: 136:l2=@parameter1: java.io.OutputStream" -> "n14: 136:l1=@parameter0: java.io.InputStream"
+  "n15: 156:l0.decodeLineSuffix(l5,l2)" -> "n11: 152:goto 156"
+  "n32: 136:l0=@this: sun.misc.CharacterDecoder" -> "n26: 0:entry"
+  "n21: 136:l4=0" -> "n33: 136:l2=@parameter1: java.io.OutputStream"
+  "n3: 151:$i0=l0.bytesPerAtom()" -> "n36: 150:l0.decodeAtom(l5,l2,$i2)"
+  "n6: 145:$i0=l0.bytesPerAtom()" -> "n29: 145:l3=0"
+  "n37: 153:l0.decodeAtom(l5,l2,$i2)" -> "n4: 153:$i2=l6 - l3"
+  "n36: 150:l0.decodeAtom(l5,l2,$i2)" -> "n30: 150:$i2=l0.bytesPerAtom()"
+  "n18: 147:$i0=l0.bytesPerAtom()" -> "n28: 146:l0.decodeAtom(l5,l2,$i2)"
+  "n16: 138:$r0.<init>(l1)" -> "n12: 138:$r0=new java.io.PushbackInputStream"
+  "n14: 136:l1=@parameter0: java.io.InputStream" -> "n32: 136:l0=@this: sun.misc.CharacterDecoder"
+  "n12: 138:$r0=new java.io.PushbackInputStream" -> "n21: 136:l4=0"
+  "n22: 146:$i2=l0.bytesPerAtom()" -> "n17: 145:if $i1 >= l6 goto 149"
+  "n9: 144:l6=l0.decodeLinePrefix(l5,l2)" -> "n1: 139:l0.decodeBufferPrefix(l5,l2)"
+  "n8: 149:$i1=l3 + $i0" -> "n2: 149:$i0=l0.bytesPerAtom()"
+  "n24: 154:$i0=l6 - l3" -> "n37: 153:l0.decodeAtom(l5,l2,$i2)"
+  "n27: 145:goto 145" -> "n19: 145:l3=l3 + $i0"
+  "n31: 149:if $i1 != l6 goto 153" -> "n8: 149:$i1=l3 + $i0"
+  "n29: 145:l3=0" -> "n9: 144:l6=l0.decodeLinePrefix(l5,l2)"
+  "n6: 145:$i0=l0.bytesPerAtom()" -> "n27: 145:goto 145"
+  "n7: 160:goto 144" -> "n34: 159:goto 160"
+}

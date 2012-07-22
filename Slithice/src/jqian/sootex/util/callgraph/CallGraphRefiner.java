@@ -103,7 +103,8 @@ public class CallGraphRefiner{
     } 
     
     public static class AggressiveCallGraphFilter extends CallGraphRefiner.CallGraphFilter{
-    	// ignore implicit entries
+    	//XXX: Already ignore implicit entries here.
+    	// @see EntryPoints.v().implicit()
     	public Collection<SootMethod> getCallGraphEntries(){
     		return EntryPoints.v().application();
     	}
@@ -120,6 +121,8 @@ public class CallGraphRefiner{
     		if(kind.isExplicit() || kind==Kind.THREAD){
     			return false;
     		} 
+    		
+    		// XXX: Already ignore implicit calls here
     		
     		return true;
     	}

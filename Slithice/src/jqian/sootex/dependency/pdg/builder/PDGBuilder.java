@@ -105,9 +105,12 @@ public class PDGBuilder extends AbstractPDGBuilder {
     static class TypeBasedBindingObjectCollector extends BindingObjectCollector{
         public Object getBindingForActualAndFormal(Location loc){
         	Object binding = null;
-        	if(loc instanceof StackLocation || loc instanceof GlobalLocation || loc instanceof MethodRet){
+        	if(loc instanceof StackLocation || loc instanceof MethodRet){
     			binding = loc;
     		}
+        	else if(loc instanceof GlobalLocation){
+        		binding = ((GlobalLocation)loc).getSootField().getDeclaringClass().getType();
+        	}
         	else if(loc instanceof HeapField){
         		HeapField f = (HeapField)loc;
         		CommonInstObject obj = (CommonInstObject)f.getWrapperObject();
@@ -139,9 +142,12 @@ public class PDGBuilder extends AbstractPDGBuilder {
     	
         public Object getBindingForActualAndFormal(Location loc){
         	Object binding = null;
-        	if(loc instanceof StackLocation || loc instanceof GlobalLocation || loc instanceof MethodRet){
+        	if(loc instanceof StackLocation || loc instanceof MethodRet){
     			binding = loc;
     		}
+        	else if(loc instanceof GlobalLocation){
+        		binding = objectType;
+        	}
         	else if(loc instanceof HeapField){
     			binding = objectType;
     		}
@@ -185,16 +191,17 @@ public class PDGBuilder extends AbstractPDGBuilder {
     }
     
     private void buildFormalForGlobals(){
-    	//build formal for globals
     	Collection<Location> modGlobals = _sdgBuilder.getTgtModGlobals(_method);
-    	for(Location loc: modGlobals){        	
-    		FormalNode node = new FormalOut(_method,loc);
+    	Collection<Object> bindingSet = _bindingCollector.getBindingSet(modGlobals);
+    	for(Object binding: bindingSet){        	
+    		FormalNode node = new FormalOut(_method,binding);
     		_pdg.addNode(node);
     	}  
     	
     	Collection<Location> useGlobals =  _sdgBuilder.getTgtUsedGlobals(_method); 
-    	for(Location loc: useGlobals){
-    		FormalNode node = new FormalIn(_method,loc,FormalIn.HEAP_INDEX);
+    	bindingSet = _bindingCollector.getBindingSet(useGlobals);
+    	for(Object binding: bindingSet){
+    		FormalNode node = new FormalIn(_method, binding, FormalIn.HEAP_INDEX);
     		_pdg.addNode(node);
     	}    	
     }
@@ -368,14 +375,17 @@ public class PDGBuilder extends AbstractPDGBuilder {
     
     private void buildActualsForGlobals(CallNode call,SootMethod callee,Unit callsite, Collection<ActualNode> list){
     	Collection<Location> modGlobals =  _sdgBuilder.getTgtModGlobals(callee);
-		Collection<Location> useGlobals = _sdgBuilder.getTgtUsedGlobals(callee);
-		for(Location loc: modGlobals){           
-			ActualOut node = new ActualOut(_method, callsite, callee, loc,loc);
+    	Collection<Object> bindingSet = _bindingCollector.getBindingSet(modGlobals);	
+		for(Object binding: bindingSet){           
+			ActualOut node = new ActualOut(_method, callsite, callee, binding,binding);
 			_pdg.addNode(node);
 			list.add(node);
         } 
-		for (Location loc: useGlobals) {				
-			ActualIn node = new ActualIn(_method, callsite, callee, loc, loc);
+		
+		Collection<Location> useGlobals = _sdgBuilder.getTgtUsedGlobals(callee);
+		bindingSet = _bindingCollector.getBindingSet(useGlobals);	
+		for (Object binding: bindingSet) {				
+			ActualIn node = new ActualIn(_method, callsite, callee, binding, binding);
 			_pdg.addNode(node);
 			list.add(node);
 		}

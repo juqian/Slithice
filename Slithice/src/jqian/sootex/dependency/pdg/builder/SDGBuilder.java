@@ -105,6 +105,11 @@ public class SDGBuilder {
 		if( !m.isConcrete() ||  !m.hasActiveBody()) 
 			return 0;  
      
+		Date startTime=null;
+        if(_verbose){
+            startTime=new Date();           
+        }
+        
 		PDGBuilder builder;
 		CallGraph cg = Scene.v().getCallGraph();
 		if(_javaLibDepth>=0 && !_restrictedCallGraph.edgesOutOf(m).hasNext() && cg.edgesOutOf(m).hasNext()){
@@ -127,6 +132,13 @@ public class SDGBuilder {
         
         //Release rd query
         _gbRdQuery.releaseQuery(m);
+        
+        Date endTime=null;
+        if(_verbose){
+            endTime=new Date();  
+            Global.v().out.println("[PDG] " + m + " -- " + Utils.getTimeConsumed(startTime,endTime) + ", " + nodeCount +" nodes");             
+            //Global.v().out.println("[Dependence Count] nodes "+nodeCount+", "+PDG.statisticsToString(edgeCount));   
+        }  
         
         return nodeCount;
 	}

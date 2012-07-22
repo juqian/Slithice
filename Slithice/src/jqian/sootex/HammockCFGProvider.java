@@ -8,7 +8,8 @@ import soot.baf.BafBody;
 import soot.toolkits.graph.UnitGraph;
 
 /**
- *
+ * TODO: 需要过程间异常分析以建立较为精确的异常流边.
+ *       目前若用ExceptinalUnitGraph太粗糙
  */
 public class HammockCFGProvider implements CFGProvider{
 	private UnitGraph[] _cfgs;

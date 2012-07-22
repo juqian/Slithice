@@ -16,9 +16,15 @@ import jqian.sootex.ptsto.PtsToHelper;
 import jqian.sootex.ptsto.SparkPtsToQuery;
 import jqian.sootex.ptsto.TypeBasedPtsToQuery;
 import jqian.sootex.sideeffect.SideEffectAnalysis;
+import jqian.sootex.util.CFGViewer;
+import jqian.sootex.util.HammockCFG;
 import jqian.util.dot.GrappaGraph;
+import jqian.util.graph.Graph;
 import soot.*;
+import soot.baf.BafBody;
 import soot.jimple.toolkits.typing.fast.SingletonList;
+import soot.toolkits.graph.DirectedGraph;
+import soot.toolkits.graph.InverseGraph;
 import test.Test;
 
 public class SDGUtil implements AllTestCases{  
@@ -107,6 +113,15 @@ public class SDGUtil implements AllTestCases{
     	Test.doFastSparkPointsToAnalysis();
     	Test.simplifyCallGraph();
     	
+    	//SootMethod m = Scene.v().getMethod("<sun.misc.CharacterDecoder: void decodeBuffer(java.io.InputStream,java.io.OutputStream)>");
+    	//HammockCFG cfg = new HammockCFG(m.getActiveBody()); 
+    	//Test.showCFG(m, cfg, "jgraph");
+    	//Test.showCFG(m, new InverseGraph(cfg), "dot");
+    	//jqian.sootex.dependency.DependencyHelper.calcCtrlDependences(cfg);
+    	
+    		    
+    	
+    	
     	//PointsToAnalysisType ptstoType = PointsToAnalysisType.SPARK;
     	//PointsToAnalysisType ptstoType = PointsToAnalysisType.TYPE_BASED;
     	PointsToAnalysisType ptstoType = PointsToAnalysisType.NAIVE;
@@ -119,7 +134,7 @@ public class SDGUtil implements AllTestCases{
     	SootMethod main = Scene.v().getMainMethod();
     	//SootMethod main = Scene.v().getMethod("<test.cases.SDG8: void test1()>");
     	
-    	boolean withDepReason = true;
+    	boolean withDepReason = false;
     	
     	//HeapAbstraction locAbstraction = HeapAbstraction.FIELD_SENSITIVE;
     	//HeapAbstraction locAbstraction = HeapAbstraction.FIELD_BASED;

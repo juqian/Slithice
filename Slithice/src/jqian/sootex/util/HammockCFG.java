@@ -158,4 +158,8 @@ public class HammockCFG extends UnitGraph{
 		}
 		return buf.toString();
 	}
+	
+	public Object clone(){
+		return new HammockCFG(this.method.getActiveBody());
+	}
 }
