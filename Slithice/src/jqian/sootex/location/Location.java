@@ -27,9 +27,10 @@ public abstract class Location implements Numberable{
 		 
 		Scene scene = Scene.v();
 		_METHOD2RET = new MethodRet[SootUtils.getMethodCount()];
-		_FIELD2LOC = new Location[scene.getFieldNumberer().size()];	
+		_FIELD2LOC = new Location[scene.getFieldNumberer().size() + 1];	
+		_TYPE2LOC = new HeapLocation[scene.getTypeNumberer().size() + 1];
+		
 		_VALUE2LOC = new WeakHashMap<Value,Location>(CollectionUtils.getHashSetInitCapacity(scene.getLocalNumberer().size()));
-		_TYPE2LOC = new HeapLocation[scene.getTypeNumberer().size()];
 	}
 	
 	static{
@@ -177,9 +178,10 @@ public abstract class Location implements Numberable{
 		return p;
 	}
 
-	/////////////////////////////////////////////////////////////////////////////////
-    
+	 
     //------------------ Instance Methods ------------------------//
+	private int _id; 
+	
     protected Location(){
     	this._id = COUNT;
     	COUNT++;    	
@@ -200,6 +202,5 @@ public abstract class Location implements Numberable{
         return _id;
     }
     
-    public abstract Type getType();  
-    private int _id;    
+    public abstract Type getType();
 }

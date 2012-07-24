@@ -61,7 +61,7 @@ public class FieldScaner{
    		//1. get the collapse call graph, each strong connected commponent into a single graph node
    		CallGraph cg = Scene.v().getCallGraph();
    		Collection<SootMethod> entries = Scene.v().getEntryPoints();
-   		DirectedGraph graph = SideEffectHelper.getSCCGraph(cg,entries);   					
+   		DirectedGraph graph = SootUtils.getSCCGraph(cg,entries);   					
    			
    		//2. topological sort
    		PseudoTopologicalOrderer pto = new PseudoTopologicalOrderer();

@@ -3,7 +3,10 @@ package jqian.sootex.location;
 import soot.SootField;
 import soot.Type;
 
+/** Model a static class field */
 public class GlobalLocation extends Location{
+    protected final SootField _field; 
+    
     GlobalLocation(SootField field){
         this._field=field;
     }
@@ -18,7 +21,5 @@ public class GlobalLocation extends Location{
     
     public Type getType(){
         return _field.getType();
-    }     
-    
-    protected SootField _field; 
+    }
 }

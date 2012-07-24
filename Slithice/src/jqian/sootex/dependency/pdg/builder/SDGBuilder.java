@@ -4,6 +4,7 @@ import java.util.*;
 
 import jqian.Global;
 import jqian.sootex.CFGProvider;
+import jqian.sootex.ConservativelyHandledEntities;
 import jqian.sootex.dependency.pdg.PDG;
 import jqian.sootex.dependency.pdg.DepGraphOptions;
 import jqian.sootex.dependency.pdg.SDG;
@@ -87,7 +88,7 @@ public class SDGBuilder {
         }
         
 	    int edgeCount[] = new int[5];		
-	    int nodeCount = buildForMethod(m,edgeCount);
+	    int nodeCount = buildForMethod(0, m,edgeCount);
 		
 		Date endTime=null;
         if(_verbose){
@@ -101,7 +102,7 @@ public class SDGBuilder {
 	public void preBuild(){		 	 
 	}
 	
-	private int buildForMethod(SootMethod m,int edgeCount[]){
+	private int buildForMethod(int id, SootMethod m,int edgeCount[]){
 		if( !m.isConcrete() ||  !m.hasActiveBody()) 
 			return 0;  
      
@@ -112,7 +113,11 @@ public class SDGBuilder {
         
 		PDGBuilder builder;
 		CallGraph cg = Scene.v().getCallGraph();
-		if(_javaLibDepth>=0 && !_restrictedCallGraph.edgesOutOf(m).hasNext() && cg.edgesOutOf(m).hasNext()){
+		if(ConservativelyHandledEntities.isConservativelyHandledMethod(m) ||
+		   ConservativelyHandledEntities.isConservativelyHandledClass(m.getDeclaringClass())){
+			builder = new PDGInterfaceBuilder(m,_dgOptions, this);
+		}
+		else if(_javaLibDepth>=0 && !_restrictedCallGraph.edgesOutOf(m).hasNext() && cg.edgesOutOf(m).hasNext()){
 			builder = new PDGInterfaceBuilder(m,_dgOptions, this);
 		}
 		else{
@@ -136,7 +141,7 @@ public class SDGBuilder {
         Date endTime=null;
         if(_verbose){
             endTime=new Date();  
-            Global.v().out.println("[PDG] " + m + " -- " + Utils.getTimeConsumed(startTime,endTime) + ", " + nodeCount +" nodes");             
+            Global.v().out.println("[PDG] " + id + ": " + m + " -- " + Utils.getTimeConsumed(startTime,endTime) + ", " + nodeCount +" nodes");             
             //Global.v().out.println("[Dependence Count] nodes "+nodeCount+", "+PDG.statisticsToString(edgeCount));   
         }  
         
@@ -166,9 +171,10 @@ public class SDGBuilder {
 			_restrictedCallGraph = cg;
 		}
 		     
-		for(Iterator<?> it = reachables.listener();it.hasNext();){
+		int i = 0;
+		for(Iterator<?> it = reachables.listener();it.hasNext(); i++){
 			SootMethod m =(SootMethod) it.next();
-			nodeCount += buildForMethod(m,edgeCount);
+			nodeCount += buildForMethod(i, m,edgeCount);
 		}
 		
 		Date endTime=null;

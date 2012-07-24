@@ -1,7 +1,7 @@
 package jqian.sootex.location;
 
-import jqian.sootex.util.*;
 import soot.*;
+import soot.jimple.spark.pag.AllocNode;
 
 /**
  * An ArraySpace is used to represent the element space of a array.
@@ -9,17 +9,17 @@ import soot.*;
 public class ArraySpace extends InstanceObject{ 
 	protected ArrayType _type;
 	protected ArrayElmt _elmt;
-	protected Value _alloc;  //allocation site
 	 
-    ArraySpace(SootMethod method,Value alloc,ArrayType type){        
-	    this._alloc=alloc;
-	    this._method=method;
+    ArraySpace(Object binding, ArrayType type){   
+    	super(binding);
+ 
 		this._type=type;
 		this._elmt=new ArrayElmt(this);
 	}
     
     /** Only used for override. */
-    public ArraySpace(){
+    ArraySpace(){
+    	super(null);
     	this._elmt = new ArrayElmt(this);
     }
     
@@ -28,16 +28,24 @@ public class ArraySpace extends InstanceObject{
     }
       
     public String toString(){
+    	Object alloc = null;
+    	SootMethod method = null;
+    	if(_binding instanceof AllocNode){
+    		AllocNode node = (AllocNode)_binding;
+    		alloc = node.getNewExpr();
+    		method = node.getMethod();    		 
+    	}
+    	
         String str="(";
-        str += (_alloc!=null)? "N": "T";
+        str += (alloc!=null)? "N": "T";
         str += getNumber()+"#"+_type.toString();
         
-        if(_alloc!=null){
+        if(alloc!=null){
         	str += "@";
-        	if(_method!=null)
-            	str+=_method.getName();//+_method.getSignature();
-        	if(getAllocUnit()!=null)
-            	str+=SootUtils.getLine(getAllocUnit());
+        	if(method!=null)
+            	str += method.getName();//+_method.getSignature();
+        	//if(getAllocUnit()!=null)
+            //	str+=SootUtils.getLine(getAllocUnit());
         }        
         str+=")";
         return str;

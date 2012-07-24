@@ -7,6 +7,8 @@ import soot.*;
  *
  */
 public class JimpleStmtNode extends DependenceNode{
+    protected Unit _stmt;  
+    
     public JimpleStmtNode(MethodOrMethodContext mc,Unit unit){
     	super(mc);
         _stmt=unit;
@@ -48,6 +50,4 @@ public class JimpleStmtNode extends DependenceNode{
     public Object getBinding(){
     	return _stmt;
     }
-    ///////////////////////////////////////////////
-    private Unit _stmt;   
 }

@@ -2,9 +2,12 @@ package jqian.sootex.dependency.pdg;
 
 import java.util.*;
 
+import jqian.Global;
 import jqian.sootex.location.InvokeInfo;
 import jqian.sootex.location.Location;
 import jqian.sootex.location.MethodRet;
+import jqian.sootex.util.SootUtils;
+import jqian.sootex.util.callgraph.CallGraphHelper;
 import jqian.sootex.util.callgraph.CallGraphWorklist;
 import jqian.sootex.util.callgraph.Callees;
 import jqian.sootex.util.graph.PathTable;
@@ -12,6 +15,7 @@ import soot.*;
 import soot.jimple.Stmt;
 import soot.jimple.toolkits.callgraph.*;
 import soot.toolkits.graph.DirectedGraph;
+import soot.toolkits.graph.PseudoTopologicalOrderer;
 
 /**
  * SDG connected by PDGs
@@ -80,6 +84,8 @@ public class SDG implements DependenceGraph{
     
     /** building connection between actuals and formals. */
     public void connectPDGs(){
+    	Global.v().out.print("\n[SDG connect methods]");
+    	
     	//connect actuals and formals
     	Collection<ActualNode> actuals = new LinkedList<ActualNode>();
     	for(PDG pdg: _mc2pdg.values()){    	 
@@ -120,15 +126,70 @@ public class SDG implements DependenceGraph{
     			}
     		}  
     	}
+    	
+    	Global.v().out.print(" done.");
     }
     
-    /** All methods reachable from the parameter method will also be analyzed, and with summay edges built. */
-	public void buildSummaryEdges(SootMethod m){
+    /** 
+     * Build summary edges for all methods reachable from the entry method. 
+     */
+	@SuppressWarnings({ "rawtypes", "unchecked" })
+	public void buildSummaryEdges(SootMethod entryMethod){
+		Global.v().out.print("\n[SDG summary]");
+		
+		CallGraph cg = Scene.v().getCallGraph();
     	Collection<SootMethod> entries = new LinkedList<SootMethod>();
-    	entries.add(m);
-    	CallGraph cg = Scene.v().getCallGraph();
-    	CallGraphWorklist worklist = new CallGraphWorklist(cg,new MyVisitor(),entries);
-    	worklist.process();
+    	entries.add(entryMethod);
+    	
+    	DirectedGraph graph = SootUtils.getSCCGraph(cg, entries);
+		PseudoTopologicalOrderer pto = new PseudoTopologicalOrderer();
+		List order = pto.newList(graph, true);
+			
+		int total = 0;
+		for(Iterator it=order.iterator();it.hasNext();){          
+	       	Collection node = (Collection) it.next();
+	       	total += node.size();
+		}
+		
+		// bottom-up phase 
+        int methodNum = 0;        
+        int lastPercent = 0;
+        for(Iterator it=order.iterator();it.hasNext();){          
+        	Collection node = (Collection) it.next();
+        	
+        	if(node.size()==1){
+        		SootMethod m = (SootMethod)node.iterator().next();
+        		findSummary(m);
+        	}
+        	else{
+        		// need iterative computation inside each strongly-connected-component 
+        		Set component = new HashSet(node);
+    			CallGraph subCg = CallGraphHelper.getSubCallGraph(cg, component);
+        		CallGraphWorklist worklist = new CallGraphWorklist(subCg, new MyVisitor());
+            	worklist.process();
+        	}
+        	
+        	// compact summary edge representation
+        	for(Object o: node){
+        		SootMethod m = (SootMethod)o;
+        		compactSummaries(m);
+        		
+        		PDG pdg = (PDG)_mc2pdg.get(m);
+        		if(pdg!=null){
+        			pdg.finalizeEdgeSets();
+        		}
+        	}        	
+        	
+        	methodNum += node.size();
+        	
+        	int newPercent = (100*methodNum)/total;
+        	if(newPercent-lastPercent>5){
+        		Global.v().out.print(" " + newPercent + "%");
+        		lastPercent = newPercent;
+        	}        	
+        }
+        
+        Global.v().out.print(" <done>\n");
     }    
     
     /** Compact SDG representation. */
@@ -145,208 +206,207 @@ public class SDG implements DependenceGraph{
     		
     		return (newSummaries!=oldSummaries);
     	}
-    	
-    	/**
-    	 * Summarize the dependence between FormalIn(s) and FormalOut(s)
-    	 */
-    	@SuppressWarnings("unused")
-		private void findSummary(SootMethod m){
-    		//FIXME: Here do not build summary for native methods
-    		if(!m.isConcrete()){    			
-    			return;
-    		}
-    		
-    		PDG pdg = (PDG)_mc2pdg.get(m);
-    		
-    		// No PDG for the method (We may not construct PDG for every method, especially for the library methods)
-    		if(pdg==null){
-    			return;
-    		}
-    		
-    		if(pdg.containsMethodBody()){
-    			Body body = m.getActiveBody();   
-            	
-            	//add summary for callees
-            	CallGraph cg = Scene.v().getCallGraph();
-            	for(Iterator<?> it=body.getUnits().iterator();it.hasNext();){
-            		Stmt s = (Stmt)it.next();        		
-            		if(!s.containsInvokeExpr()){
-            			continue;
-            		}
-            			
-            		// no binding node, the statement may be ignored in the CFG
-            		if(pdg.getStmtBindingNode(s)==null){
-            			continue;
-            		}
-            		
-            		Callees callees = new Callees(cg,s);	
-            	    for(SootMethod tgt: callees.explicits()){
-            	    	 addSummaryForCall(pdg,s,tgt); 
-            	    }
-            	}
-    		}
-    		else{
-    			pdg.hashCode();
-    		}
-    		
-    		Collection<SummaryEdge> summaries = getSummaries(m);
-        	//using PathTable to find the reachablity relations in the PDG   
-        	//The same objective also can be implemented by LocalSlicer
-        	if(false){
-        		findSummaryEdgeByPathTable(pdg,summaries);
-        	}
-        	else{
-        		findSummaryEdgeByGraphTraverse(pdg,summaries);
-        	}
-        }
-    	
-    	/**XXX The path table based approach seems to time-consuming. A PDG may have 10000 nodes. */
-    	protected void findSummaryEdgeByPathTable(PDG pdg,Collection<SummaryEdge> summaries){
-    		Collection<FormalNode> fIns = pdg.getFormalIns();
-        	Collection<FormalNode> fOuts = pdg.getFormalOuts();
-        	
-        	PathTable tbl = new PathTable(pdg.toDirectedGraph());        	
-        	for(FormalNode in: fIns){        		 
-        		for(FormalNode out: fOuts){            	 
-            		if(tbl.hasPath(in, out)){
-            			Object binding = out.getBinding();
-            			SummaryEdge edge = new SummaryEdge(in,out,binding);
-            			summaries.add(edge);            			
-            		}
-            	}
-        	}
-    	}
-    	
-    	
-    	protected void findSummaryEdgeByGraphTraverse(PDG pdg,Collection<SummaryEdge> summaries){    		 
-        	Collection<FormalNode> fOuts = pdg.getFormalOuts();
-        	for(FormalNode out: fOuts){ 
-        		Set<DependenceNode> fIns = getReachableFormals(pdg, out);
-        		for(DependenceNode in: fIns){
-            		Object binding = out.getBinding();
-            		SummaryEdge edge = new SummaryEdge(in,out,binding);
-            		summaries.add(edge);  
-            	}
-        	}
-    	}
-    	
-    	// FIXME: Here to use BitVector to speed up analysis
-    	private Set<DependenceNode> getReachableFormals(PDG pdg, DependenceNode dest) {
-    		Set<DependenceNode> reach = new HashSet<DependenceNode>();
-    		Set<DependenceNode> formals = new HashSet<DependenceNode>();
-    		Stack<DependenceNode> stack = new Stack<DependenceNode>();    
-    		DependenceNode entry = pdg.entry();
-
-    		Collection<DependenceEdge> edges = pdg.edgesInto(dest);
-			if (edges != null){
-				for (DependenceEdge e: edges) {    				 
-					stack.add(e.getFrom()); 
-				}
-			}			
-    		
-    		while (!stack.isEmpty()) {
-    			DependenceNode top = stack.pop();
-    			
-    			if (!reach.add(top)) {
-    				continue;
-    			}
-    			
-    			if(top instanceof FormalNode){
-    				formals.add(top);
-    				continue;
-    			}
-
-    			if(top==entry){
-    				continue;
-    			}    			
-
-    			edges = pdg.edgesInto(top);
-    			if (edges == null)
-    				continue;
-
-    			for (DependenceEdge e: edges) {  
-    				DependenceNode from = e.getFrom();
-    				if (!reach.contains(from)) { 
-    					stack.add(from);    					 
-    				}
-    			}
-    		}
-
-    		return formals;
-    	}
-    	
-    	private void addSummaryForCall(PDG pdg,Unit callsite,SootMethod callee){
-        	InvokeInfo invoke = new InvokeInfo((Stmt)callsite);
-        	if(!callee.isConcrete()){
-        		//just assume the return depends on each formal in
-        		Location ret = invoke.getRetLoc();
-        		if(ret!=null){
-        			ActualNode out = pdg.getBindingActual(callsite, callee, ret, false);
-            		
-            		Location[] args = invoke.getArgLocs();
-            		int count = args.length;
-            		for(int i=0;i<count;i++){
-            			Location arg = args[i];
-            			ActualNode in = pdg.getBindingActual(callsite, callee, arg, true);
-            			SummaryEdge edge = new SummaryEdge(in,out,ret);
-            			pdg.addEdge(edge);
-            		}
-            		
-            		if(!callee.isStatic()){
-            			Location thiz = invoke.receiver();
-            			ActualNode in = pdg.getBindingActual(callsite, callee, thiz, true);
-            			SummaryEdge edge = new SummaryEdge(in,out,ret);
-            			pdg.addEdge(edge);
-            		}    
-        		}
-        		// TODO: need to use native helper to find dependence between in parameter		
-        	}
-        	else{
-        		Collection<SummaryEdge> summaries = getSummaries(callee);
-        		Location[] args = invoke.getArgLocs();
-        		for(SummaryEdge edge: summaries){        		 
-        			FormalIn from = (FormalIn)edge.getFrom();
-        			DependenceNode to = edge.getTo();
-        			
-        			Object inBinding = null;
-        			Object outBinding = null;
-        			{
-        				int paramIdx = from.getParamIndex();
-    					if (paramIdx >= 0) {
-    						inBinding = args[paramIdx];
-    					} else if (paramIdx == FormalIn.THIS_INDEX) {
-    						inBinding = invoke.receiver();
-    					}
-    					else{
-    						inBinding =  from.getBinding();
-    					}
-    					
-    					Object obj = to.getBinding();
-    					if(obj instanceof MethodRet){
-    						outBinding = invoke.getRetLoc();
-    						//if method return is not used, then just continue;
-    	        			if(outBinding==null)
-    	        				continue;
-    					}
-    					else{
-    						outBinding = obj;
-    					}
-        			}   
-        			
-        			if(inBinding==null || outBinding==null){
-        				throw new RuntimeException("Strange Error");
-        			}
-      				
-        			ActualNode actualIn = pdg.getBindingActual(callsite, callee, inBinding, true);
-        			ActualNode actualOut = pdg.getBindingActual(callsite, callee, outBinding, false); 
-        			
-        			edge = new SummaryEdge(actualIn,actualOut,outBinding);        			
-            		pdg.addEdge(edge); 
-        		}
-        	}	
-        }
     }
   
+	/**
+	 * Summarize the dependence between FormalIn(s) and FormalOut(s)
+	 */
+	@SuppressWarnings("unused")
+	private void findSummary(SootMethod m){
+		//FIXME: Here do not build summary for native methods
+		if(!m.isConcrete()){    			
+			return;
+		}
+		
+		PDG pdg = (PDG)_mc2pdg.get(m);
+		
+		// No PDG for the method (We may not construct PDG for every method, especially for the library methods)
+		if(pdg==null){
+			return;
+		}
+		
+		if(pdg.containsMethodBody()){
+			Body body = m.getActiveBody();   
+        	
+        	//add summary for callees
+        	CallGraph cg = Scene.v().getCallGraph();
+        	for(Iterator<?> it=body.getUnits().iterator();it.hasNext();){
+        		Stmt s = (Stmt)it.next();        		
+        		if(!s.containsInvokeExpr()){
+        			continue;
+        		}
+        			
+        		// no binding node, the statement may be ignored in the CFG
+        		if(pdg.getStmtBindingNode(s)==null){
+        			continue;
+        		}
+        		
+        		Callees callees = new Callees(cg,s);	
+        	    for(SootMethod tgt: callees.explicits()){
+        	    	 addSummaryForCall(pdg,s,tgt); 
+        	    }
+        	}
+		}
+		else{
+			pdg.hashCode();
+		}
+		
+		Collection<SummaryEdge> summaries = getSummaries(m);
+    	//using PathTable to find the reachablity relations in the PDG   
+    	//The same objective also can be implemented by LocalSlicer
+    	if(false){
+    		findSummaryEdgeByPathTable(pdg,summaries);
+    	}
+    	else{
+    		findSummaryEdgeByGraphTraverse(pdg,summaries);
+    	}
+    }
+	
+	/**XXX The path table based approach seems to time-consuming. A PDG may have 10000 nodes. */
+	protected void findSummaryEdgeByPathTable(PDG pdg,Collection<SummaryEdge> summaries){
+		Collection<FormalNode> fIns = pdg.getFormalIns();
+    	Collection<FormalNode> fOuts = pdg.getFormalOuts();
+    	
+    	PathTable tbl = new PathTable(pdg.toDirectedGraph());        	
+    	for(FormalNode in: fIns){        		 
+    		for(FormalNode out: fOuts){            	 
+        		if(tbl.hasPath(in, out)){
+        			Object binding = out.getBinding();
+        			SummaryEdge edge = new SummaryEdge(in,out,binding);
+        			summaries.add(edge);            			
+        		}
+        	}
+    	}
+	}
+	
+	
+	protected void findSummaryEdgeByGraphTraverse(PDG pdg,Collection<SummaryEdge> summaries){    		 
+    	Collection<FormalNode> fOuts = pdg.getFormalOuts();
+    	for(FormalNode out: fOuts){ 
+    		Set<DependenceNode> fIns = getReachableFormals(pdg, out);
+    		for(DependenceNode in: fIns){
+        		Object binding = out.getBinding();
+        		SummaryEdge edge = new SummaryEdge(in,out,binding);
+        		summaries.add(edge);  
+        	}
+    	}
+	}
+	
+	// FIXME: Here to use BitVector to speed up analysis
+	private Set<DependenceNode> getReachableFormals(PDG pdg, DependenceNode dest) {
+		Set<DependenceNode> reach = new HashSet<DependenceNode>();
+		Set<DependenceNode> formals = new HashSet<DependenceNode>();
+		Stack<DependenceNode> stack = new Stack<DependenceNode>();    
+		DependenceNode entry = pdg.entry();
+
+		Collection<DependenceEdge> edges = pdg.edgesInto(dest);
+		if (edges != null){
+			for (DependenceEdge e: edges) {    				 
+				stack.add(e.getFrom()); 
+			}
+		}			
+		
+		while (!stack.isEmpty()) {
+			DependenceNode top = stack.pop();
+			
+			if (!reach.add(top)) {
+				continue;
+			}
+			
+			if(top instanceof FormalNode){
+				formals.add(top);
+				continue;
+			}
+
+			if(top==entry){
+				continue;
+			}    			
+
+			edges = pdg.edgesInto(top);
+			if (edges == null)
+				continue;
+
+			for (DependenceEdge e: edges) {  
+				DependenceNode from = e.getFrom();
+				if (!reach.contains(from)) { 
+					stack.add(from);    					 
+				}
+			}
+		}
+
+		return formals;
+	}
+	
+	private void addSummaryForCall(PDG pdg,Unit callsite,SootMethod callee){
+    	InvokeInfo invoke = new InvokeInfo((Stmt)callsite);
+    	if(!callee.isConcrete()){
+    		//just assume the return value depends on each formal-in
+    		Location ret = invoke.getRetLoc();
+    		if(ret!=null){
+    			ActualNode out = pdg.getBindingActual(callsite, callee, ret, false);
+        		
+        		Location[] args = invoke.getArgLocs();
+        		int count = args.length;
+        		for(int i=0;i<count;i++){
+        			Location arg = args[i];
+        			ActualNode in = pdg.getBindingActual(callsite, callee, arg, true);
+        			SummaryEdge edge = new SummaryEdge(in,out,ret);
+        			pdg.addEdge(edge);
+        		}
+        		
+        		if(!callee.isStatic()){
+        			Location thiz = invoke.receiver();
+        			ActualNode in = pdg.getBindingActual(callsite, callee, thiz, true);
+        			SummaryEdge edge = new SummaryEdge(in,out,ret);
+        			pdg.addEdge(edge);
+        		}    
+    		}
+    		// TODO: need to use native helper to find dependence between in parameter		
+    	}
+    	else{
+    		Collection<SummaryEdge> summaries = getSummaries(callee);
+    		Location[] args = invoke.getArgLocs();
+    		for(SummaryEdge edge: summaries){        		 
+    			FormalIn from = (FormalIn)edge.getFrom();
+    			DependenceNode to = edge.getTo();
+    			
+    			Object inBinding = null;
+    			Object outBinding = null;
+    			{
+    				int paramIdx = from.getParamIndex();
+					if (paramIdx >= 0) {
+						inBinding = args[paramIdx];
+					} else if (paramIdx == FormalIn.THIS_INDEX) {
+						inBinding = invoke.receiver();
+					}
+					else{
+						inBinding =  from.getBinding();
+					}
+					
+					Object obj = to.getBinding();
+					if(obj instanceof MethodRet){
+						outBinding = invoke.getRetLoc();
+						//if method return is not used, then just continue;
+	        			if(outBinding==null)
+	        				continue;
+					}
+					else{
+						outBinding = obj;
+					}
+    			}   
+    			
+    			if(inBinding==null || outBinding==null){
+    				throw new RuntimeException("Strange Error");
+    			}
+  				
+    			ActualNode actualIn = pdg.getBindingActual(callsite, callee, inBinding, true);
+    			ActualNode actualOut = pdg.getBindingActual(callsite, callee, outBinding, false); 
+    			
+    			edge = new SummaryEdge(actualIn,actualOut,outBinding);        			
+        		pdg.addEdge(edge); 
+    		}
+    	}	
+    }
   
     
     /** Get the corresponding FormalNode of a ActualNode. 
@@ -383,6 +443,14 @@ public class SDG implements DependenceGraph{
     	}
     	
     	return summaries;
+    }
+    
+    private void compactSummaries(SootMethod m){
+    	Collection<SummaryEdge> summaries = _mc2summaries.get(m);
+    	if(summaries!=null){
+    		summaries = new ArrayList<SummaryEdge>(summaries);
+    		_mc2summaries.put(m, summaries);
+    	}
     }
     
     /*public Collection getBindingActuals(FormalNode fm){

@@ -7,6 +7,11 @@ import soot.*;
  * A class to hold the call information
  */
 public class InvokeInfo {
+    private Location   _receiver;
+    private Location   _ret;
+    private Location[] _argLocs;    
+    private Stmt       _stmt;
+    
     public InvokeInfo(Stmt stmt){       
         this._stmt=stmt;
         
@@ -96,10 +101,4 @@ public class InvokeInfo {
         InvokeExpr invoke = _stmt.getInvokeExpr();
     	return invoke.getMethod();
     }
-    
-    ////////////////////////////////////////////////
-    private Location   _receiver;
-    private Location   _ret;
-    private Location[] _argLocs;    
-    private Stmt       _stmt;
 }

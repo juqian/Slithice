@@ -6,15 +6,21 @@ import soot.*;
  *
  */
 public class CallNode extends DependenceNode {
+    protected final Unit _callsite;   
+    protected final SootMethod _callee;
+    
 	public CallNode(MethodOrMethodContext mc,Unit callsite,SootMethod callee){
     	super(mc);
         this._callsite = callsite;
         this._callee = callee;        
     }
     
-    /**Get the corresponding statement.*/
-    public Unit getCallSite(){
+    public final Unit getCallSite(){
         return _callsite;
+    }
+    
+    public final SootMethod getCallee(){
+    	return _callee;
     }
     
     public boolean equals(Object obj){
@@ -53,8 +59,4 @@ public class CallNode extends DependenceNode {
     public Object getBinding(){
     	return _callee;
     }
-    
-    ///////////////////////////////////////////////
-    protected Unit _callsite;   
-    protected SootMethod _callee;
 }

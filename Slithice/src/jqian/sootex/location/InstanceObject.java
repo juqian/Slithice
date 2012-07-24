@@ -12,7 +12,7 @@ import soot.jimple.spark.pag.AllocNode;
  * <immutable>
  */
 public abstract class InstanceObject implements Numberable{  
-	public static final InstanceObject NIL = new SpecialObject("nil");
+	public  static final InstanceObject NIL = new SpecialObject("nil");
 	private static int TOTAL;  
 	private static InstanceObject[] _type2obj;
 	
@@ -26,30 +26,22 @@ public abstract class InstanceObject implements Numberable{
 		reset();		
 		Global.v().regesiterResetableGlobals(InstanceObject.class);		
 	}	
-	
-	private   int _objId;
-	protected SootMethod _method;      //the allocation method
-	protected Numberable _binding;
 
 	public static InstanceObject makeInstObject(AllocNode node) {	
 		InstanceObject obj = null;		 
 		Object expr = node.getNewExpr();
-		SootMethod method = node.getMethod();
 		Type type = node.getType();
 
 		if (expr instanceof NewExpr) {
-			obj = new CommonInstObject(method, (Value) expr, type);
-			obj._binding = node;
+			obj = new CommonInstObject(node, type);
 		} 
 		else if (expr instanceof NewArrayExpr	|| expr instanceof NewMultiArrayExpr) {
-			obj = new ArraySpace(method, (Value) expr, (ArrayType) type);
-			obj._binding = node;
+			obj = new ArraySpace(node, (ArrayType) type);		 
 		} 
 		else {
-			// XXX constant do not affect program analysis, especially dependence analysis, so we ignore them here
+			// XXX Constants do not affect analysis, especially dependence analysis, so we ignore them here
 			/*
 			 * if(expr instanceof ClassConstant){
-			 * 
 			 * Type type=node.getType(); if(type==RefType.v( "java.lang.String"
 			 * )){
 			 *  } else if(type==RefType.v( "java.lang.Class")){
@@ -75,13 +67,11 @@ public abstract class InstanceObject implements Numberable{
 
 	private static InstanceObject createTypeObject(Type type){
 		if(type instanceof ArrayType){
-			InstanceObject o = new ArraySpace(null,null,(ArrayType)type);  
-			o._binding = type;
+			InstanceObject o = new ArraySpace(type,(ArrayType)type);  		 
 			return o;
 		}
 		else if(type instanceof RefType){
-			InstanceObject o = new CommonInstObject(null,null,type);
-			o._binding = type;
+			InstanceObject o = new CommonInstObject(type, type);			 
 			return o;
 		}
 		else if(type instanceof NullType){
@@ -93,22 +83,19 @@ public abstract class InstanceObject implements Numberable{
     }  
 	 
 	// ---------------------- Instance members ------------------------//
-	protected InstanceObject() {
+	protected final int _objId;
+	protected Object _binding;
+	
+
+	protected InstanceObject(Object binding) {
 		this._objId = TOTAL;
+		this._binding = binding;
+		
 		TOTAL++;
 	}
 
-	/** Get allocation site. */
-	public Unit getAllocUnit(){
-        return null;
-    }
-	
-    /**Get the method where the object is allocated*/
-    public SootMethod getAllocMethod(){
-        return _method;
-    }	
-    
-    public Numberable getBindingObject(){
+	/** Get the attached object. Usually used to identify the instance object. */
+    public Object getBindingObject(){
         return _binding;
     }
 	
@@ -126,6 +113,7 @@ class SpecialObject extends InstanceObject{
 	private String _name;
 	
     SpecialObject(String name){
+    	super(name);
         this._name=name;        
     }
    

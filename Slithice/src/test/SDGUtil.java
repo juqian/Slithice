@@ -15,7 +15,9 @@ import jqian.sootex.ptsto.PointsToAnalysisType;
 import jqian.sootex.ptsto.PtsToHelper;
 import jqian.sootex.ptsto.SparkPtsToQuery;
 import jqian.sootex.ptsto.TypeBasedPtsToQuery;
+import jqian.sootex.sideeffect.ISideEffectAnalysis;
 import jqian.sootex.sideeffect.SideEffectAnalysis;
+import jqian.sootex.sideeffect.SideEffectAnalysisEx;
 import jqian.sootex.util.CFGViewer;
 import jqian.sootex.util.HammockCFG;
 import jqian.util.dot.GrappaGraph;
@@ -58,6 +60,7 @@ public class SDGUtil implements AllTestCases{
 			boolean verbose, int javaLibDepth) {
 		IPtsToQuery ptsto = PtsToHelper.createPointsToQuery(ptstoType);
 		SideEffectAnalysis se = new SideEffectAnalysis(ptsto,entries, heabAbstraction);
+		//SideEffectAnalysisEx se = new SideEffectAnalysisEx(ptsto,entries, heabAbstraction);
 		se.build();
 
 		CFGProvider cfgProvider = new HammockCFGProvider();
@@ -122,14 +125,14 @@ public class SDGUtil implements AllTestCases{
     		    
     	
     	
-    	//PointsToAnalysisType ptstoType = PointsToAnalysisType.SPARK;
+    	PointsToAnalysisType ptstoType = PointsToAnalysisType.SPARK;
     	//PointsToAnalysisType ptstoType = PointsToAnalysisType.TYPE_BASED;
-    	PointsToAnalysisType ptstoType = PointsToAnalysisType.NAIVE;
+    	//PointsToAnalysisType ptstoType = PointsToAnalysisType.NAIVE;
     	
     	//HeapAbstraction seOpt = HeapAbstraction.FIELD_SENSITIVE;
-    	//HeapAbstraction seOpt = HeapAbstraction.FIELD_BASED;
+    	HeapAbstraction seOpt = HeapAbstraction.FIELD_BASED;
     	//HeapAbstraction seOpt = HeapAbstraction.TYPE_BASED;
-    	HeapAbstraction seOpt = HeapAbstraction.NO_DISTINGUISH;
+    	//HeapAbstraction seOpt = HeapAbstraction.NO_DISTINGUISH;
     	
     	SootMethod main = Scene.v().getMainMethod();
     	//SootMethod main = Scene.v().getMethod("<test.cases.SDG8: void test1()>");
@@ -137,13 +140,13 @@ public class SDGUtil implements AllTestCases{
     	boolean withDepReason = false;
     	
     	//HeapAbstraction locAbstraction = HeapAbstraction.FIELD_SENSITIVE;
-    	//HeapAbstraction locAbstraction = HeapAbstraction.FIELD_BASED;
+    	HeapAbstraction locAbstraction = HeapAbstraction.FIELD_BASED;
     	//HeapAbstraction locAbstraction = HeapAbstraction.TYPE_BASED;
-    	HeapAbstraction locAbstraction = HeapAbstraction.NO_DISTINGUISH;
+    	//HeapAbstraction locAbstraction = HeapAbstraction.NO_DISTINGUISH;
     	
 		DepGraphOptions opts = new DepGraphOptions(true, withDepReason, locAbstraction);
-		int javaLibDepth = -1;
-		//int javaLibDepth = 1;
+		//int javaLibDepth = -1;
+		int javaLibDepth = 1;
 		
     	SDG sdg = constructSDG(ptstoType, seOpt, new SingletonList(main), opts, true, javaLibDepth);
     	sdg.buildSummaryEdges(main);

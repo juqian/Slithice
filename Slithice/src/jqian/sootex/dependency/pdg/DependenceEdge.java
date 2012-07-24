@@ -10,8 +10,8 @@ public abstract class DependenceEdge
     public static final int CTRL_DEP = 3;
     public static final int UNDISTINGUSIHED_DATA_DEP = 4;
     
-    private DependenceNode _from;
-    private DependenceNode _to;    
+    private final DependenceNode _from;
+    private final DependenceNode _to;    
     
     /** NOTE Here edges are maintained separately from the dependence nodes.*/
     protected DependenceEdge(DependenceNode from,DependenceNode to){
@@ -19,11 +19,11 @@ public abstract class DependenceEdge
         this._to=to;
     }
     
-    public DependenceNode getFrom(){
+    public final DependenceNode getFrom(){
         return _from;
     }
     
-    public DependenceNode getTo(){
+    public final DependenceNode getTo(){
         return _to;
     }
     

@@ -3,10 +3,7 @@ package jqian.sootex.sideeffect;
 import java.util.*;
 
 import jqian.Global;
-import jqian.sootex.AtomicTypes;
-import jqian.sootex.Cache;
 import jqian.sootex.location.AccessPath;
-import jqian.sootex.location.GlobalLocation;
 import jqian.sootex.location.HeapLocation;
 import jqian.sootex.location.InstanceObject;
 import jqian.sootex.location.Location;
@@ -16,13 +13,6 @@ import jqian.sootex.ptsto.PtsToHelper;
 import jqian.sootex.util.SootUtils;
 import jqian.util.Utils;
 import soot.*;
-import soot.jimple.AnyNewExpr;
-import soot.jimple.ArrayRef;
-import soot.jimple.InstanceFieldRef;
-import soot.jimple.NewArrayExpr;
-import soot.jimple.NewExpr;
-import soot.jimple.NewMultiArrayExpr;
-import soot.jimple.StaticFieldRef;
 import soot.jimple.toolkits.callgraph.*;
 import soot.toolkits.graph.DirectedGraph;
 import soot.toolkits.graph.PseudoTopologicalOrderer;
@@ -33,6 +23,7 @@ import soot.toolkits.graph.PseudoTopologicalOrderer;
  * When using context-insensitive pointer analysis, the side-effect sets of a method can be huge.
  * 
  * TODO: Use some kinds of escape analysis to improve the analysis precision.
+ *       Filter the locations that have no chance to escape or are never used outside the method
  */
 @SuppressWarnings({"rawtypes","unchecked"})
 public class SideEffectAnalysis implements ISideEffectAnalysis{
@@ -69,6 +60,13 @@ public class SideEffectAnalysis implements ISideEffectAnalysis{
         return _method2UseHeaps[m.getNumber()];
     } 
     
+    void clearMethod(int id){    	 
+        _method2ModHeaps[id] = null; 
+        _method2UseHeaps[id] = null;    
+        _method2ModGb[id] = null; 
+        _method2UseGb[id] = null;   
+    }
+    
     private Set<InstanceObject> collectObjects(Collection<Location> locations){
     	Set<InstanceObject> objects = new HashSet<InstanceObject>();
     	for(Location loc: locations){
@@ -97,11 +95,14 @@ public class SideEffectAnalysis implements ISideEffectAnalysis{
         _method2ModHeaps = new Set[methodNum];
         _method2UseHeaps = new Set[methodNum];
         _method2ModGb = new Set[methodNum];        
-        _method2UseGb = new Set[methodNum]; 
-                
+        _method2UseGb = new Set[methodNum];  
+       
+        CallGraph cg = Scene.v().getCallGraph();        
+        FastEscapeAnalysis escape = new FastEscapeAnalysis(cg);
+        escape.build();
+        
         //1. get the collapse call graph, each strong connected component into a single graph node
-   		CallGraph cg = Scene.v().getCallGraph();
-   		DirectedGraph graph = SideEffectHelper.getSCCGraph(cg,_entries);		
+   		DirectedGraph graph = SootUtils.getSCCGraph(cg,_entries);		
    			
    		//2. topological sort
    		PseudoTopologicalOrderer pto = new PseudoTopologicalOrderer();
@@ -118,7 +119,7 @@ public class SideEffectAnalysis implements ISideEffectAnalysis{
         //3. bottom-up phase to find read/write on instance fields
         for(Iterator it=order.iterator();it.hasNext();){          
         	Collection node = (Collection) it.next();
-        	findRWInstFieldsForComponent(node, cg);
+        	findRWInstFieldsForComponent(node, cg, escape);
         }  
 		
 		//free memories
@@ -139,7 +140,7 @@ public class SideEffectAnalysis implements ISideEffectAnalysis{
         //intra-procedural analysis            
         for(Iterator it = methods.iterator();it.hasNext();){
             SootMethod m = (SootMethod)it.next();          
-            collectRWStaticFields(m,mod,use);   
+            SideEffectHelper.collectRWStaticFields(m,mod,use);   
         }
         
     	// collect from callees 		
@@ -163,14 +164,14 @@ public class SideEffectAnalysis implements ISideEffectAnalysis{
         }
     }
     
-    private void findRWInstFieldsForComponent(Collection methods, CallGraph cg){        
+    private void findRWInstFieldsForComponent(Collection methods, CallGraph cg, ILocalityQuery locality){        
     	Set mod = new HashSet();
         Set use = new HashSet();
         
         //intra-procedural analysis            
         for(Iterator it = methods.iterator();it.hasNext();){
             SootMethod m = (SootMethod)it.next();             
-            collectRWInstanceFields(m, _ptsto, mod, use); 
+            collectRWInstanceFields(m, _ptsto, locality, mod, use); 
         }
 		
     	// collect from callees 		
@@ -199,90 +200,14 @@ public class SideEffectAnalysis implements ISideEffectAnalysis{
 		out.addAll(locs);
 	}
 	
-	void collectRWInstanceFields(SootMethod m, IPtsToQuery ptsto, 
+	void collectRWInstanceFields(SootMethod m, IPtsToQuery ptsto, ILocalityQuery locality, 
 									   Set<Location> mod, Set<Location> use) {
 		Set<AccessPath> modAps = new HashSet<AccessPath>();
 		Set<AccessPath> useAps = new HashSet<AccessPath>();
 		
-		collectRWAccessPaths(m, modAps, useAps);
+		SideEffectHelper.collectRWAccessPaths(m, locality, modAps, useAps);
 		
 		for(AccessPath ap: modAps){ addSideEffect(ptsto, ap, mod); }
 		for(AccessPath ap: useAps){ addSideEffect(ptsto, ap, use); }
-	}
-	
-	static void collectRWAccessPaths(SootMethod m, Set<AccessPath> mod, Set<AccessPath> use){
-		if (!m.isConcrete())
-			return;
-
-		for (Unit stmt : m.getActiveBody().getUnits()) {
-			for (ValueBox box : stmt.getDefBoxes()) {
-				Value v = box.getValue();
-				if(v instanceof InstanceFieldRef || v instanceof ArrayRef){
-					AccessPath ap = AccessPath.valueToAccessPath(m, stmt, v);
-					mod.add(ap);
-        		}
-			}
-
-			List<ValueBox> useBoxes = stmt.getUseBoxes();
-			if (useBoxes == null)
-				continue;
-
-			for (ValueBox useBox : useBoxes) {
-				Value u = useBox.getValue();
-				if(u instanceof InstanceFieldRef || u instanceof ArrayRef){
-					AccessPath ap = AccessPath.valueToAccessPath(m, stmt, u);
-    				use.add(ap);
-        		}
-				else if (u instanceof AnyNewExpr) {
-					// XXX: new instructions have initialization effects
-					Value lhs = stmt.getDefBoxes().get(0).getValue();
-					AccessPath left = AccessPath.valueToAccessPath(m, stmt, lhs);
-
-					if (u instanceof NewExpr) {
-						RefType type = (RefType) u.getType();
-						SootClass cls = type.getSootClass();
-						if (!AtomicTypes.isAtomicType(cls)) {
-							Collection<SootField> fields = Cache.v().getAllInstanceFields(cls);
-							for (SootField f : fields) {
-								AccessPath ap = left.appendFieldRef(f);
-								mod.add(ap);
-							}
-						}
-					} else if (u instanceof NewArrayExpr || u instanceof NewMultiArrayExpr) {
-						AccessPath ap = left.appendArrayRef();
-						mod.add(ap);
-					}
-				} 
-			}
-		}
-	}
-
-	static void collectRWStaticFields(SootMethod m, Set mod, Set use) {
-		if (!m.isConcrete())
-			return;
-
-		for (Unit stmt : m.getActiveBody().getUnits()) {
-			List<ValueBox> defBoxes = stmt.getDefBoxes();
-			for (ValueBox box : defBoxes) {
-				Value v = box.getValue();
-				if (v instanceof StaticFieldRef) {
-					StaticFieldRef ref = (StaticFieldRef) v;
-					GlobalLocation loc = Location.getGlobalLocation(ref.getField());
-					mod.add(loc);
-				}
-			}
-
-			List<ValueBox> useBoxes = stmt.getUseBoxes();
-			if (useBoxes != null) {
-				for (ValueBox useBox : useBoxes) {
-					Value v = useBox.getValue();
-					if (v instanceof StaticFieldRef) {
-						StaticFieldRef ref = (StaticFieldRef) v;
-						GlobalLocation loc = Location.getGlobalLocation(ref.getField());
-						use.add(loc);
-					}
-				}
-			}
-		}
 	}
 }

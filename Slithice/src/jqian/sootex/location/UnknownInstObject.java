@@ -3,9 +3,8 @@ package jqian.sootex.location;
 import jqian.Global;
 import soot.Scene;
 import soot.SootField;
-import soot.SootMethod;
 import soot.Type;
-import soot.Unit;
+
 
 public class UnknownInstObject extends CommonInstObject{
 	// auto clean
@@ -38,23 +37,8 @@ public class UnknownInstObject extends CommonInstObject{
 	protected final HeapField _field;
 	
     private UnknownInstObject() {
-		super();
-		
 		_field = new UnknownHeapField(this);
 	}
-    
-    //@Override
-    protected void buildFields(){
-    	
-    }
-
-	public Unit getAllocUnit(){
-        return null;
-    }
-    
-    public SootMethod getAllocMethod(){
-        return null;
-    }
     
     public Type getType(){
     	return Scene.v().getObjectType();

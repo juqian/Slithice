@@ -3,8 +3,6 @@ package jqian.sootex.location;
 import jqian.Global;
 import soot.ArrayType;
 import soot.Scene;
-import soot.SootMethod;
-import soot.Unit;
 
 public class UnknownArraySpace extends ArraySpace{
 	private static UnknownArraySpace _instance;
@@ -27,14 +25,6 @@ public class UnknownArraySpace extends ArraySpace{
 
     public ArrayType getType(){
     	return Scene.v().getObjectType().makeArrayType();
-    }
-    
-	public Unit getAllocUnit(){
-        return null;
-    }
-    
-    public SootMethod getAllocMethod(){
-        return null;
     }
     
     public String toString(){

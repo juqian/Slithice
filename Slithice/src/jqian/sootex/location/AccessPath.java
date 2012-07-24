@@ -17,17 +17,6 @@ public class AccessPath implements Numberable{
 	private static Object UNCLEAR_INDEX = new Object();
 	private static Map<Location, AccessPath> _root2AccessPath;
 	private static int _count = 0;
-
-	private final Location _root;
-	private final AccessPath _father;
-	private final int _id;
-	private final Object[] _accessList; // accessor can be SootField/Value/UNCLEAR_INDEX
-	
-	// private List<AccessPath> _extensions = new ArrayList<AccessPath>(5);
-	// XXX: Using list to store extensions is too slow
-	// Using map will improve efficiency, but some program may fail to run due
-	// to OutOfMemoryException
-	private Map<Object, AccessPath> _extensions = new HashMap<Object, AccessPath>(5);
     
 	protected static void reset(){
 		_count = 0;
@@ -143,6 +132,18 @@ public class AccessPath implements Numberable{
         return ap;
     }   
     
+    
+	private final Location _root;
+	private final AccessPath _father;
+	private final int _id;
+	private final Object[] _accessList; // accessor can be SootField/Value/UNCLEAR_INDEX
+	
+	// private List<AccessPath> _extensions = new ArrayList<AccessPath>(5);
+	// XXX: Using list to store extensions is too slow
+	// Using map will improve efficiency, but some program may fail to run due
+	// to OutOfMemoryException
+	private Map<Object, AccessPath> _extensions = new HashMap<Object, AccessPath>(5);
+    
     //The access path can only be build from an implcit factory
     private AccessPath(Location loc){
         this._root = loc; 
@@ -183,7 +184,7 @@ public class AccessPath implements Numberable{
         return ap;
     }
     
-    public final AccessPath appendAccessor(final Object accessor){
+    final AccessPath appendAccessor(final Object accessor){
         //if found, do not reconstruct it        
         /*for(AccessPath ap: _extensions){ 
         	int index = ap._accessList.length-1;         

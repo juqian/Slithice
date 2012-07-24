@@ -6,7 +6,13 @@ import soot.*;
  *
  *	Model the method arguments
  */
-public abstract class ActualNode extends DependenceNode{
+public abstract class ActualNode extends DependenceNode{	
+	protected Unit _callsite;   
+	protected SootMethod _callee;
+	protected Object _binding;             //the binding can be a Location or a SootField
+	protected Object _formalNodeBinding;   //corresponding parameter    
+	
+	
 	/**
 	 * @param binding  The binding object can be a Location, a SootField or an ArrayType
 	 */
@@ -38,9 +44,4 @@ public abstract class ActualNode extends DependenceNode{
 	public String toString() {		
 		return _binding.toString();
 	}
-	
-	protected Object _binding;       //the binding can be a Location or a SootField
-	protected Unit _callsite;        
-	protected Object _formalNodeBinding;      //corresponding parameter    
-	protected SootMethod _callee;
 }

@@ -47,6 +47,33 @@ public abstract class DUAnalysis extends ForwardFlowAnalysis<Unit,FlowSet> imple
 	/** Collect DU of each statement */
 	protected abstract Collection<ReachingDU> collectStmtDU(Unit stmt);
 	
+	private static class FinalizedFlowSet extends ArraySparseSet{
+		public FinalizedFlowSet(FlowSet set){
+			maxElements = numElements = set.size();
+		    elements = new Object[numElements];
+		      
+		    int i=0;    
+			for(Iterator<?> it = set.iterator();it.hasNext(); i++){
+				elements[i] = it.next();
+			}
+		}
+		
+		@SuppressWarnings("rawtypes")
+		@Override
+		public final List toList(){
+		    return Arrays.asList(elements);
+		}
+	}
+	
+	protected void finalizeFlowSets(){
+		for(Map.Entry<Unit, FlowSet> e: this.unitToBeforeFlow.entrySet()){
+			FlowSet v = e.getValue();
+			FlowSet vf = new FinalizedFlowSet(v);
+			e.setValue(vf);
+		}
+	}
+	
+	
 	public void build(){
 		if(_verbose){        
             Global.v().out.print("["+getAnalysisName()+"] ");
@@ -58,7 +85,8 @@ public abstract class DUAnalysis extends ForwardFlowAnalysis<Unit,FlowSet> imple
 		initKillSet(universe);
 		universe = null;
 		
-		doAnalysis(); 	 
+		doAnalysis(); 
+		finalizeFlowSets();
 		clean();
 		
 		Date endTime=new Date();	
@@ -195,9 +223,18 @@ public abstract class DUAnalysis extends ForwardFlowAnalysis<Unit,FlowSet> imple
 	
 	/////////////////////// IReachingDUQuery /////////////////////////////   
     public Collection<Unit> getReachingDUSites(Unit stmt, AccessPath ap, Location loc){
-        Collection<Location> locs = new ArrayList<Location>(1);
-        locs.add(loc);        
-        return getReachingDUSites(stmt, ap, locs);
+    	Set<Unit> froms = new HashSet<Unit>();  
+        FlowSet before = getFlowBefore(stmt);
+        
+        for(Iterator<?> it=before.iterator(); it.hasNext(); ){
+            ReachingDU rd = (ReachingDU)it.next();
+            Collection<Location> duLocs = rd.getLocations();
+            if(duLocs.contains(loc)){
+            	froms.add(rd.getStmt());
+            }
+        }
+        
+        return froms;
     }
     
     public Collection<Unit> getReachingDUSites(Unit stmt, AccessPath ap, Collection<Location> locs){        

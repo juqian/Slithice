@@ -4,16 +4,24 @@ import java.lang.reflect.Method;
 import java.util.*;
 
 import jqian.Global;
+import jqian.sootex.util.callgraph.CallGraphEdgeFilter;
+import jqian.sootex.util.callgraph.CallGraphHelper;
+import jqian.sootex.util.callgraph.CallGraphNodeFilter;
+import jqian.sootex.util.callgraph.DirectedCallGraph;
 import jqian.util.SortedArraySet;
 
 import soot.jimple.*;
 import soot.jimple.spark.SparkTransformer;
 import soot.jimple.spark.pag.PAG;
+import soot.jimple.toolkits.callgraph.CallGraph;
+import soot.jimple.toolkits.callgraph.Edge;
 import soot.jimple.toolkits.callgraph.ReachableMethods;
 import soot.shimple.*;
 import soot.*;
 import soot.util.*;
 import soot.tagkit.*;
+import soot.toolkits.graph.DirectedGraph;
+import soot.toolkits.graph.StronglyConnectedComponents;
 import soot.toolkits.scalar.Pair;
 
 
@@ -39,6 +47,21 @@ public class SootUtils {
         return classes;        
     } 
     
+	@SuppressWarnings("unchecked")
+	public static void getAllSubClasses(SootClass cls,Collection<SootClass> out){
+		try{
+			FastHierarchy hierarchy = Scene.v().getFastHierarchy();	
+			Collection<SootClass> subs = hierarchy.getSubclassesOf(cls);
+			out.addAll(subs);
+			
+			for(SootClass c: subs){
+				getAllSubClasses(c,out);
+			}	
+		}
+		catch(Exception e){ 
+		}	
+	}
+	
     public static Set<SootField> findAllInstanceFields(SootClass cls){
         Set<SootField> fields = new TreeSet<SootField>(NumberableComparator.v());
         Set<SootClass> set = getAncestorTypes(cls);
@@ -474,5 +497,24 @@ public class SootUtils {
 		else{
 			return new SortedArraySet(s,NumberableComparator.v());
 		}
+	}
+	
+	/**
+	 * get graph of strong connected components. 
+	 * XXX: Here we break thread start calls in the call graph when finding SCCs
+	 */
+	public static DirectedGraph<Collection> getSCCGraph(CallGraph cg, Collection entries) {
+		ReachableMethods rm = CallGraphHelper.getReachableMethod(cg, entries);
+		CallGraphNodeFilter nodeFilter = CallGraphHelper.getCallGraphNodeFilter(rm);
+
+		CallGraphEdgeFilter edgeFilter = new CallGraphEdgeFilter() {
+			public boolean isIgnored(Edge e) {
+				return (e.kind() == Kind.THREAD);
+			}
+		};
+
+		DirectedCallGraph dcg = new DirectedCallGraph(cg, entries, nodeFilter, edgeFilter);
+		StronglyConnectedComponents scc = new StronglyConnectedComponents(dcg);
+		return scc.getSuperGraph();
 	}
 }

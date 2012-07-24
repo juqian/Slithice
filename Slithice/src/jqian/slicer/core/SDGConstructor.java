@@ -24,6 +24,7 @@ import jqian.sootex.ptsto.TypeBasedPointsToAnalysis;
 import jqian.sootex.ptsto.TypeBasedPtsToQuery;
 import jqian.sootex.sideeffect.ISideEffectAnalysis;
 import jqian.sootex.sideeffect.SideEffectAnalysis;
+import jqian.sootex.sideeffect.SideEffectAnalysisEx;
 import jqian.sootex.util.SootUtils;
 import jqian.sootex.util.callgraph.CallGraphRefiner;
 import soot.*;
@@ -135,6 +136,7 @@ public class SDGConstructor implements Runnable{
 		
         // collect method side-effects
 		SideEffectAnalysis se = new SideEffectAnalysis(ptsto,entries, _options.heapAbstraction);
+		//SideEffectAnalysisEx se = new SideEffectAnalysisEx(ptsto,entries, _options.heapAbstraction);
 		se.build();
 		return se;
 	}

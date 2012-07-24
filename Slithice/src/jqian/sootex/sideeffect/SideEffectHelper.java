@@ -2,6 +2,10 @@ package jqian.sootex.sideeffect;
 
 import java.util.*;
 
+import jqian.sootex.AtomicTypes;
+import jqian.sootex.Cache;
+import jqian.sootex.location.AccessPath;
+import jqian.sootex.location.GlobalLocation;
 import jqian.sootex.location.Location;
 import jqian.sootex.util.NumberableComparator;
 import jqian.sootex.util.callgraph.CallGraphEdgeFilter;
@@ -11,6 +15,13 @@ import jqian.sootex.util.callgraph.Callees;
 import jqian.sootex.util.callgraph.DirectedCallGraph;
 import jqian.util.SortedArraySet;
 import soot.*;
+import soot.jimple.AnyNewExpr;
+import soot.jimple.ArrayRef;
+import soot.jimple.InstanceFieldRef;
+import soot.jimple.NewArrayExpr;
+import soot.jimple.NewExpr;
+import soot.jimple.NewMultiArrayExpr;
+import soot.jimple.StaticFieldRef;
 import soot.jimple.toolkits.callgraph.*;
 import soot.toolkits.graph.DirectedGraph;
 import soot.toolkits.graph.StronglyConnectedComponents;
@@ -60,24 +71,112 @@ public class SideEffectHelper {
 			}
 		}
 	}
-
-	/**
-	 * get graph of strong connected components. 
-	 * XXX: Here we break thread start calls in the call graph when finding SCCs
-	 */
-	static DirectedGraph<Collection> getSCCGraph(CallGraph cg, Collection entries) {
-		ReachableMethods rm = CallGraphHelper.getReachableMethod(cg, entries);
-		CallGraphNodeFilter nodeFilter = CallGraphHelper
-				.getCallGraphNodeFilter(rm);
-
-		CallGraphEdgeFilter edgeFilter = new CallGraphEdgeFilter() {
-			public boolean isIgnored(Edge e) {
-				return (e.kind() == Kind.THREAD);
+	
+	static boolean isRefTgtLocal(ILocalityQuery localityQuery, SootMethod m, Value ap){
+		if (localityQuery != null) {
+			Local root = null;
+			if (ap instanceof InstanceFieldRef) {
+				root = (Local) ((InstanceFieldRef) ap).getBase();
+			} else {
+				root = (Local) ((ArrayRef) ap).getBase();
 			}
-		};
 
-		DirectedCallGraph dcg = new DirectedCallGraph(cg, entries, nodeFilter, edgeFilter);
-		StronglyConnectedComponents scc = new StronglyConnectedComponents(dcg);
-		return scc.getSuperGraph();
+			boolean isLocal = localityQuery.isRefTgtLocal(m, root);
+			if (isLocal) {
+				return true;
+			}
+		}
+		
+		return false;
+	}
+
+
+	
+	static void collectRWAccessPaths(SootMethod m, ILocalityQuery locality, Set<AccessPath> mod, Set<AccessPath> use){
+		if (!m.isConcrete())
+			return;
+
+		for (Unit stmt : m.getActiveBody().getUnits()) {
+			for (ValueBox box : stmt.getDefBoxes()) {
+				Value v = box.getValue();
+				if(v instanceof InstanceFieldRef || v instanceof ArrayRef){
+					if(!isRefTgtLocal(locality, m, v)){
+						AccessPath ap = AccessPath.valueToAccessPath(m, stmt, v);
+						mod.add(ap);
+					}
+        		}
+			}
+
+			List<ValueBox> useBoxes = stmt.getUseBoxes();
+			if (useBoxes == null)
+				continue;
+
+			for (ValueBox useBox : useBoxes) {
+				Value u = useBox.getValue();
+				if(u instanceof InstanceFieldRef || u instanceof ArrayRef){
+					if(!isRefTgtLocal(locality, m, u)){
+						AccessPath ap = AccessPath.valueToAccessPath(m, stmt, u);
+	    				use.add(ap);
+					}
+        		}
+				else if (u instanceof AnyNewExpr) {
+					// XXX: new instructions have initialization effects
+					Value lhs = stmt.getDefBoxes().get(0).getValue();
+					if (locality!=null && locality.isRefTgtLocal(m, (Local)lhs)) {
+						continue;
+					}
+					
+					AccessPath left = AccessPath.valueToAccessPath(m, stmt, lhs);
+
+					if (u instanceof NewExpr) {
+						RefType type = (RefType) u.getType();
+						SootClass cls = type.getSootClass();
+						if (!AtomicTypes.isAtomicType(cls)) {
+							Collection<SootField> fields = Cache.v().getAllInstanceFields(cls);
+							for (SootField f : fields) {
+								AccessPath ap = left.appendFieldRef(f);
+								mod.add(ap);
+							}
+						}
+					} else if (u instanceof NewArrayExpr || u instanceof NewMultiArrayExpr) {
+						AccessPath ap = left.appendArrayRef();
+						mod.add(ap);
+					}
+				} 
+			}
+		}
+	}
+	
+	static void collectRWStaticFields(SootMethod m, Set mod, Set use) {
+		if (!m.isConcrete())
+			return;
+
+		for (Unit stmt : m.getActiveBody().getUnits()) {
+			List<ValueBox> defBoxes = stmt.getDefBoxes();
+			for (ValueBox box : defBoxes) {
+				Value v = box.getValue();
+				if (v instanceof StaticFieldRef) {
+					StaticFieldRef ref = (StaticFieldRef) v;
+					GlobalLocation loc = Location.getGlobalLocation(ref.getField());
+					mod.add(loc);
+				}
+			}
+
+			List<ValueBox> useBoxes = stmt.getUseBoxes();
+			if (useBoxes != null) {
+				for (ValueBox useBox : useBoxes) {
+					Value v = useBox.getValue();
+					if (v instanceof StaticFieldRef) {
+						StaticFieldRef ref = (StaticFieldRef) v;
+						SootField f = ref.getField();
+						//XXX: Treat static final fields as constants
+						if(!f.isFinal()){
+							GlobalLocation loc = Location.getGlobalLocation(f);
+							use.add(loc);
+						}						
+					}
+				}
+			}
+		}
 	}
 }

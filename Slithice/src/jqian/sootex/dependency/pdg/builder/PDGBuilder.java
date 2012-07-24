@@ -20,13 +20,13 @@ import jqian.sootex.dependency.pdg.ActualIn;
 import jqian.sootex.dependency.pdg.ActualNode;
 import jqian.sootex.dependency.pdg.ActualOut;
 import jqian.sootex.dependency.pdg.CallNode;
+import jqian.sootex.dependency.pdg.CallsiteNode;
 import jqian.sootex.dependency.pdg.CtrlDependenceEdge;
 import jqian.sootex.dependency.pdg.DependenceEdge;
 import jqian.sootex.dependency.pdg.DependenceNode;
 import jqian.sootex.dependency.pdg.FormalNode;
 import jqian.sootex.dependency.pdg.FormalOut;
 import jqian.sootex.dependency.pdg.FormalIn;
-import jqian.sootex.dependency.pdg.JimpleStmtNode;
 import jqian.sootex.dependency.pdg.DepGraphOptions;
 import jqian.sootex.du.IReachingDUQuery;
 import soot.*;
@@ -307,8 +307,8 @@ public class PDGBuilder extends AbstractPDGBuilder {
     @Override
     protected void buildNodesForCall(Unit callsite){    
     	//also build a unique node to link all possible calls
-    	JimpleStmtNode node=new JimpleStmtNode(_method,callsite);
-        _pdg.addNode(node);  
+    	CallsiteNode callsiteNode = new CallsiteNode(_method,callsite);
+        _pdg.addNode(callsiteNode);  
         
         //We do not build call nodes for callsites whose callee are discarded during call graph simplification
  	    CallGraph cg = Scene.v().getCallGraph(); 	    
@@ -317,12 +317,13 @@ public class PDGBuilder extends AbstractPDGBuilder {
  	    	//add call node
  	    	CallNode call = new CallNode(_method,callsite,tgt);
  	    	_pdg.addNode(call);
+ 	    	callsiteNode.addCalleeNode(call);
  	    	
  	    	//add actual nodes
  	    	buildActuals(call,tgt,callsite);
  	    	
  	    	//add control dependence
- 	    	 DependenceEdge edge = new CtrlDependenceEdge(node, call);
+ 	    	 DependenceEdge edge = new CtrlDependenceEdge(callsiteNode, call);
  			_pdg.addEdge(edge);  
  	    }    
     }
@@ -442,21 +443,26 @@ public class PDGBuilder extends AbstractPDGBuilder {
     	}
     	else{    		
     		if((stmt instanceof Stmt) && ((Stmt)stmt).containsInvokeExpr()){
-    			CallGraph cg = Scene.v().getCallGraph(); 	    
-    	 	    Callees callees = new Callees(cg,stmt);	
-    	 	    
-    	 	    //If all targets are tailed during call graph simplification
-    	 	    if(callees.explicits().size()==0){
-    	 	    	DependenceNode src = _pdg.getStmtBindingNode(stmt);
-        			nodes.add(src);
-    	 	    }
-    	 	    else{
-    	 	    	Object binding = _bindingCollector.getBindingForActualAndFormal(loc);
-    	 	    	for(SootMethod tgt: callees.explicits()){        				
-        				DependenceNode n=_pdg.getBindingActual(stmt,tgt, binding, false);	
-        				if(n!=null)	nodes.add(n); 					
-        			}  
-    	 	    }
+    			DependenceNode src = _pdg.getStmtBindingNode(stmt);
+    			if(src instanceof CallsiteNode){
+    				CallsiteNode callsiteNode = (CallsiteNode)src;
+    				Collection<CallNode> calleeNodes = callsiteNode.getCalleeNodes();
+    				
+    				//If all targets are tailed during call graph simplification
+    				if(calleeNodes.isEmpty()){
+    					nodes.add(src);
+    				}
+    				else{
+    					Object binding = _bindingCollector.getBindingForActualAndFormal(loc);
+    					for(CallNode call: calleeNodes){
+    						DependenceNode n=_pdg.getBindingActual(stmt,call.getCallee(), binding, false);	
+            				if(n!=null)	nodes.add(n); 		
+    					}
+    				}
+    			}
+    			else{
+    				nodes.add(src);
+    			}
     		}
     		else{
     			DependenceNode src = _pdg.getStmtBindingNode(stmt);

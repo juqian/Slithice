@@ -5,6 +5,7 @@ import java.util.*;
 import jqian.sootex.Cache;
 import jqian.sootex.location.AccessPath;
 import jqian.sootex.location.Location;
+import jqian.sootex.location.GlobalLocation;
 import jqian.sootex.location.HeapAbstraction;
 import jqian.sootex.ptsto.IPtsToQuery;
 import jqian.sootex.ptsto.PtsToHelper;
@@ -95,8 +96,11 @@ public class RDAnalysis extends DUAnalysis{
 			defGlobals.addAll(mod);
 	    } 
 		
-		for(Location gb: defGlobals){				
-			AccessPath ap = AccessPath.getByRoot(gb);				 
+		for(Location gb: defGlobals){		
+			AccessPath ap = null;
+			if(gb instanceof GlobalLocation){
+				ap = AccessPath.getByRoot(gb);
+			}
 			ReachingDU gbrd = new ReachingDU(invokeStmt,ap,gb);			          
 			rdSet.add(gbrd);
 		}

@@ -3,25 +3,24 @@ package jqian.sootex.location;
 import java.util.*;
 import soot.*;
 import soot.jimple.*;
+import soot.jimple.spark.pag.AllocNode;
 import jqian.sootex.Cache;
-import jqian.sootex.util.*;
 
 
 public class CommonInstObject extends InstanceObject{ 	
 	private Type _type; 
-	private Value _alloc; 
 	private HeapField[] _fieldLocs;	
 	
-    CommonInstObject(SootMethod method,Value alloc,Type type){		
-	    this._alloc=alloc;	    
-	    this._method=method;
-		this._type=type;	
-		
+    CommonInstObject(Object binding,Type type){		
+    	super(binding);
+		this._type=type;			
 	    buildFields();	
 	}   
     
     /** Only use for override. */
-    public CommonInstObject(){}
+    CommonInstObject(){ 
+    	super(null); 
+    }
     
     /**Return the corresponding field */
 	public HeapField getField(final SootField field){
@@ -36,7 +35,7 @@ public class CommonInstObject extends InstanceObject{
 	    return _fieldLocs; 
 	}	
 	
-    protected void buildFields(){        
+    private void buildFields(){        
 		SootClass cls = ((RefType) _type).getSootClass();
 		Collection<SootField> flds = Cache.v().getAllInstanceFields(cls);
 		_fieldLocs = new HeapField[flds.size()];
@@ -52,8 +51,16 @@ public class CommonInstObject extends InstanceObject{
     }
 
     public String toString(){
+    	Object alloc = null;
+    	SootMethod method = null;
+    	if(_binding instanceof AllocNode){
+    		AllocNode node = (AllocNode)_binding;
+    		alloc = node.getNewExpr();
+    		method = node.getMethod();    		 
+    	}
+    	
         String str= "(";
-		if(_alloc!=null && _alloc instanceof AnyNewExpr){
+		if(alloc!=null && alloc instanceof AnyNewExpr){
 			str += "N"; 
 	    }else{
 	    	str += "T"; 
@@ -64,13 +71,13 @@ public class CommonInstObject extends InstanceObject{
         //int index=typename.lastIndexOf('.');
         //typename=typename.substring(index+1,typename.length());        
         
-        if(_alloc!=null){
+        if(alloc!=null){
         	//str+=typename;
         	str += "@";
-            if(_method!=null)
-                str+=_method.getName();//+_method.getSignature();
-            if(getAllocUnit()!=null)
-                str+="_"+SootUtils.getLine(getAllocUnit());
+            if(method!=null)
+                str+=method.getName();
+            //if(getAllocUnit()!=null)
+            //    str+="_"+SootUtils.getLine(getAllocUnit());
         }else{
         	str+= _type.toString();
         }

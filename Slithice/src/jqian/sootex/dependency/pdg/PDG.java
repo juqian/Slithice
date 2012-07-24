@@ -1,6 +1,7 @@
 package jqian.sootex.dependency.pdg;
 
 import java.util.*;
+
 import jqian.sootex.location.GlobalLocation;
 import jqian.sootex.location.HeapLocation;
 import jqian.sootex.location.MethodRet;
@@ -24,9 +25,9 @@ public class PDG implements DependenceGraph{
     private Map<DependenceNode,Collection<DependenceEdge>> _edgesOut;  //edges out of each node
     private Map<DependenceNode,Collection<DependenceEdge>> _edgesIn;   //edges into each node
     
-    private Map<Object,DependenceNode> _obj2node;     //from the binding object to node for fast access
-    private Map<Object,FormalNode> _loc2formalIn;     //from binding object to FormalIn node
-    private Map<Object,FormalNode> _loc2formalOut;    //from binding object to FormalOut node
+    private Map<Object,DependenceNode> _obj2node;      //from binding object to node for fast access
+    private Map<Object,FormalNode> _binding2formalIn;  //from binding object to FormalIn node
+    private Map<Object,FormalNode> _binding2formalOut; //from binding object to FormalOut node
     private Map<Argument,ActualNode> _arg2actualIn;
     private Map<Argument,ActualNode> _arg2actualOut;    
   
@@ -38,57 +39,153 @@ public class PDG implements DependenceGraph{
 	public PDG(MethodOrMethodContext mc){
         this._mc = mc;
         
+        _entry = new EntryNode(_mc);
         _nodes =  new TreeSet<DependenceNode>(NumberableComparator.v());
-        _loc2formalIn = new HashMap<Object,FormalNode>(); 
-        _loc2formalOut = new HashMap<Object,FormalNode>();
+        _binding2formalIn = new HashMap<Object,FormalNode>(); 
+        _binding2formalOut = new HashMap<Object,FormalNode>();
         
-        _edgesOut = new HashMap<DependenceNode,Collection<DependenceEdge>>();     
-        _edgesIn = new HashMap<DependenceNode,Collection<DependenceEdge>>();     
+        //_edgesOut = new HashMap<DependenceNode,Collection<DependenceEdge>>();     
+        //_edgesIn = new HashMap<DependenceNode,Collection<DependenceEdge>>();
+        
+        //XXX: Use an integer based map to save memory
+    	_edgesOut = new NodeMap<Collection<DependenceEdge>>(_entry.getNumber());     
+        _edgesIn = new NodeMap<Collection<DependenceEdge>>(_entry.getNumber()); 
         
         _obj2node = new HashMap<Object,DependenceNode>();
         _arg2actualIn = new HashMap<Argument,ActualNode>();
         _arg2actualOut = new HashMap<Argument,ActualNode>();  
         
-        //build the entry node      
-        _entry = new EntryNode(_mc);
+        //build the entry node
         addNode(_entry);
     }
     
 	/** Compact PDG, reduce memory consummation when the PDG becomes stable. */
-    public void compact(){
+    @SuppressWarnings({ "rawtypes", "unchecked" })
+	public void compact(){
     	// Use a compact node set
     	_nodes = new ArrayList<DependenceNode>(_nodes);
     	
     	// compact edge set for non interface nodes
-    	// only ActualNode may update its edges later during SDG construction
-    	for(Map.Entry<DependenceNode, Collection<DependenceEdge>> e: _edgesIn.entrySet()){
-    		DependenceNode n = e.getKey();
-    		if(!(n instanceof ActualNode)){
-    			Collection<DependenceEdge> edges = e.getValue();
-        		edges = new ArrayList<DependenceEdge>(edges);
-        		e.setValue(edges);
+    	if(_edgesIn instanceof NodeMap){
+    		Object[] nodemap = ((NodeMap)_edgesIn).map;
+    		int length = nodemap.length;
+    		for(int i=0; i<length; i++){
+				Collection<DependenceEdge> edges = (Collection<DependenceEdge>)nodemap[i];
+    			if(edges!=null){
+    				if(edges.isEmpty()){
+    					nodemap[i] = Collections.EMPTY_LIST;
+    				}
+    				else{
+    					DependenceNode n = edges.iterator().next().getTo();
+    					if(!(n instanceof ActualNode)){    	        			
+    	            		edges = new ArrayList<DependenceEdge>(edges);
+    	            		nodemap[i] = edges;
+    	        		}
+    				}
+    			}
     		}
     	}
-    	
-    	for(Map.Entry<DependenceNode, Collection<DependenceEdge>> e: _edgesOut.entrySet()){
-    		DependenceNode n = e.getKey();
-    		if(!(n instanceof ActualNode)){
-        		Collection<DependenceEdge> edges = e.getValue();
-        		edges = new ArrayList<DependenceEdge>(edges);
-        		e.setValue(edges);
+    	else{
+        	// only ActualNode may update its edges later during SDG construction
+        	for(Map.Entry<DependenceNode, Collection<DependenceEdge>> e: _edgesIn.entrySet()){
+        		DependenceNode n = e.getKey();
+        		if(!(n instanceof ActualNode)){
+        			Collection<DependenceEdge> edges = e.getValue();
+            		edges = new ArrayList<DependenceEdge>(edges);
+            		e.setValue(edges);
+        		}
+        	}
+    	}
+
+    	if(_edgesOut instanceof NodeMap){
+       		Object[] nodemap = ((NodeMap)_edgesOut).map;
+    		int length = nodemap.length;
+    		for(int i=0; i<length; i++){
+    			Collection<DependenceEdge> edges = (Collection<DependenceEdge>)nodemap[i];
+    			if(edges!=null){
+    				if(edges.isEmpty()){
+    					nodemap[i] = Collections.EMPTY_LIST;    					
+    				}
+    				else{
+    					DependenceNode n = edges.iterator().next().getFrom();
+    					if(!(n instanceof ActualNode)){    	        			
+    	            		edges = new ArrayList<DependenceEdge>(edges);
+    	            		nodemap[i] = edges;
+    	        		}
+    				}
+    			}
     		}
+    	}
+    	else{
+        	for(Map.Entry<DependenceNode, Collection<DependenceEdge>> e: _edgesOut.entrySet()){
+        		DependenceNode n = e.getKey();
+        		if(!(n instanceof ActualNode)){
+            		Collection<DependenceEdge> edges = e.getValue();
+            		edges = new ArrayList<DependenceEdge>(edges);
+            		e.setValue(edges);
+        		}
+        	}
     	}
     }
 
+	/** Compact edge set representation. */
+    @SuppressWarnings({ "rawtypes", "unchecked" })
+	void finalizeEdgeSets(){    	
+    	// compact edge set for non interface nodes
+    	if(_edgesIn instanceof NodeMap){
+    		Object[] nodemap = ((NodeMap)_edgesIn).map;
+    		int length = nodemap.length;
+    		for(int i=0; i<length; i++){
+				Collection<DependenceEdge> edges = (Collection<DependenceEdge>)nodemap[i];
+    			if(edges!=null && edges instanceof Set){
+    				edges = new ArrayList<DependenceEdge>(edges);
+    	            nodemap[i] = edges;
+    			}
+    		}
+    	}
+    	else{
+        	// only ActualNode may update its edges later during SDG construction
+        	for(Map.Entry<DependenceNode, Collection<DependenceEdge>> e: _edgesIn.entrySet()){
+        		Collection<DependenceEdge> edges = e.getValue();
+        		if(edges instanceof Set){        			
+            		edges = new ArrayList<DependenceEdge>(edges);
+            		e.setValue(edges);
+        		}
+        	}
+    	}
+
+    	if(_edgesOut instanceof NodeMap){
+       		Object[] nodemap = ((NodeMap)_edgesOut).map;
+    		int length = nodemap.length;
+    		for(int i=0; i<length; i++){
+    			Collection<DependenceEdge> edges = (Collection<DependenceEdge>)nodemap[i];
+    			if(edges!=null && edges instanceof Set){
+    				 edges = new ArrayList<DependenceEdge>(edges);
+    	             nodemap[i] = edges;    	        	 
+    			}
+    		}
+    	}
+    	else{
+        	for(Map.Entry<DependenceNode, Collection<DependenceEdge>> e: _edgesOut.entrySet()){
+        		Collection<DependenceEdge> edges = e.getValue();
+        		if(edges instanceof Set){            		
+            		edges = new ArrayList<DependenceEdge>(edges);
+            		e.setValue(edges);
+        		}
+        	}
+    	}
+    }
+
+    
     /**Adds a node to the graph.*/ 
     public boolean addNode(DependenceNode node){
     	Object binding = node.getBinding();    	
     	
     	if(node instanceof FormalIn){
-    		_loc2formalIn.put(binding,(FormalIn)node);
+    		_binding2formalIn.put(binding,(FormalIn)node);
     	}
     	else if(node instanceof FormalOut){
-    		_loc2formalOut.put(binding,(FormalOut)node);
+    		_binding2formalOut.put(binding,(FormalOut)node);
     	}
     	else if(node instanceof ActualIn){
     		ActualNode actual = (ActualNode)node;
@@ -137,9 +234,9 @@ public class PDG implements DependenceGraph{
     /** Get the corresponding formal nodes of the given binding object <code>binding</code>.*/
     public FormalNode getBindingFormal(Object binding, boolean isGetFormalIn){
     	if(isGetFormalIn)
-    	    return _loc2formalIn.get(binding);
+    	    return _binding2formalIn.get(binding);
     	else
-    		return _loc2formalOut.get(binding);
+    		return _binding2formalOut.get(binding);
     }
     
     /** Get the corresponding actual nodes of the given information.*/
@@ -447,11 +544,11 @@ public class PDG implements DependenceGraph{
     }
     
     public Collection<FormalNode> getFormalIns(){
-    	return _loc2formalIn.values();
+    	return _binding2formalIn.values();
     }
     
     public Collection<FormalNode> getFormalOuts(){
-    	return _loc2formalOut.values();
+    	return _binding2formalOut.values();
     }
     
     public void getActualNodes(Collection<ActualNode> out){
@@ -491,7 +588,11 @@ public class PDG implements DependenceGraph{
     } 
     
     
-    private static final class Argument{
+    private static final class Argument{   	
+    	final Unit _callsite;
+    	final SootMethod _callee;
+    	final Object _loc;
+    	
     	//The argument location can be a Location or even a SootField which standing for a collection of Locations
     	public Argument(Unit callsite,SootMethod callee,Object loc){
     		this._callsite = callsite;
@@ -515,9 +616,92 @@ public class PDG implements DependenceGraph{
     			hash += 11*_loc.hashCode();
     		return hash;
     	}
+    }
+    
+    
+    static class NodeMap<N> implements Map<DependenceNode, N>{
+    	static final float INC_FACTOR = (float)1.6;
+    	private final int initIndex;
+    	private Object[] map;
     	
-    	Unit _callsite;
-    	SootMethod _callee;
-    	Object _loc;
+    	NodeMap(int initIndex){
+    		this.initIndex = initIndex;
+    		this.map = new Object[32];
+    	}
+
+		public int size() {
+			throw new RuntimeException("Non supported");
+		}
+
+		public boolean isEmpty() {
+			throw new RuntimeException("Non supported");
+		}
+
+		public boolean containsKey(Object key) {
+			throw new RuntimeException("Non supported");
+		}
+
+		public boolean containsValue(Object value) {
+			throw new RuntimeException("Non supported");
+		}
+		
+		private void assureCapacity(int id){
+			int length = map.length;
+			if(length <= id){			 
+				while(length <= id){
+					length *= INC_FACTOR;
+				}
+				
+				Object[] newmap = new Object[length];
+				System.arraycopy(map, 0, newmap, 0, map.length);
+				map = newmap;
+			}
+		}
+
+		@SuppressWarnings("unchecked")
+		public N get(Object key) {
+			DependenceNode n = (DependenceNode)key;
+			int id = n.getNumber() - initIndex;
+			assureCapacity(id);
+			return (N)map[id];
+		}
+
+		@SuppressWarnings("unchecked")
+		public N put(DependenceNode key, N value) {
+			DependenceNode n = (DependenceNode)key;
+			int id = n.getNumber() - initIndex;
+			assureCapacity(id);
+			Object old = map[id];
+			map[id] = value;			 
+			return (N)old;
+		}
+		
+		public Object[] getMapArray(){
+			return map;
+		}
+
+		public N remove(Object key) {
+			throw new RuntimeException("Non supported");
+		}
+
+		public void putAll(Map<? extends DependenceNode, ? extends N> m) {
+			throw new RuntimeException("Non supported");
+		}
+
+		public void clear() {
+			throw new RuntimeException("Non supported");
+		}
+
+		public Set<DependenceNode> keySet() {
+			throw new RuntimeException("Non supported");
+		}
+
+		public Collection<N> values() {
+			throw new RuntimeException("Non supported");
+		}
+
+		public Set<java.util.Map.Entry<DependenceNode, N>> entrySet() {
+			throw new RuntimeException("Non supported");
+		}    	
     }
 }

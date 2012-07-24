@@ -13,9 +13,6 @@ public interface ISideEffectAnalysis {
     public Collection<Location> getModHeapLocs(SootMethod m);
     public Collection<Location> getUseHeapLocs(SootMethod m); 
     
-    public Collection<InstanceObject> getModObjects(SootMethod m);
-    public Collection<InstanceObject> getUseObjects(SootMethod m); 
-    
     public Collection<Location> getModGlobals(SootMethod m);
     public Collection<Location> getUseGlobals(SootMethod m); 
 }
